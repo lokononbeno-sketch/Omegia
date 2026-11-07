@@ -478,21 +478,53 @@ dialog::backdrop { background: rgba(244, 242, 250, .85); }
 #accSaveBtn { margin: 12px 16px 8px; width: calc(100% - 32px); }
 #accMessage { margin: 0 16px 12px; }
 
-/* Mode sombre basique */
+/* ===== OMEGIA NEO : thème sombre ===== */
 body.dark-mode {
-  --page: #121212;
-  --surface: #1e1e1e;
-  --ink: #f0f0f0;
-  --muted: #a0a0a0;
-  --line: #333;
-  --lavender: #2a2540;
-  --page: #0f0f12;
+  color-scheme: dark;
+  --violet: #a78bfa;
+  --violet-dark: #8b6be8;
+  --lavender: #29233f;
+  --ink: #f2efff;
+  --muted: #aaa4bf;
+  --line: #39334c;
+  --surface: #201d2c;
+  --page: #151320;
+  --green: #28b9a5;
+  --green-dark: #159b89;
+  --blue: #75a9ff;
 }
-body.dark-mode .bubble.out { background: #005c4b; color: #e7ffee; }
-body.dark-mode .bubble.in { background: #1f2c34; color: #e9edef; }
-body.dark-mode .chat-view { background: #0b141a; }
+body.dark-mode .bubble.out { background: #514080; color: #fff; }
+body.dark-mode .bubble.in { background: #29263a; color: #f2efff; }
+body.dark-mode .chat-view { background: #171522; }
+body.dark-mode input,
+body.dark-mode textarea,
 body.dark-mode .composer-input,
-body.dark-mode .settings-search-wrap input { background: #2a2a2a; color: var(--ink); }
+body.dark-mode .settings-search-wrap input,
+body.dark-mode .tool-btn {
+  background: #292638;
+  color: var(--ink);
+  border-color: var(--line);
+}
+body.dark-mode dialog { background: var(--surface); color: var(--ink); }
+body.dark-mode dialog::backdrop { background: rgba(8, 7, 16, .82); }
+body.dark-mode .login-card,
+body.dark-mode .post-card,
+body.dark-mode .story-card,
+body.dark-mode .profile-section,
+body.dark-mode .create-panel,
+body.dark-mode .lit-card,
+body.dark-mode .lit-detail-card,
+body.dark-mode .set-block {
+  background: var(--surface);
+  color: var(--ink);
+}
+body.dark-mode .bottom-nav,
+body.dark-mode .app-header { background: #1b1827; }
+body.dark-mode .cover-edit { background: #292638; color: var(--ink); }
+body.dark-mode .secondary-btn { background: #332b4c; color: var(--ink); }
+body.dark-mode .side-item:hover,
+body.dark-mode .set-row:hover { background: #302a43; }
+
 
 /* ===== BÉNOLI LITTÉRAIRE ===== */
 .lit-header {
@@ -672,4 +704,70 @@ body.dark-mode .settings-search-wrap input { background: #2a2a2a; color: var(--i
 @media (prefers-reduced-motion: no-preference) {
   .login-card, .landing-copy { animation: rise .5s ease both; }
   @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+}
+
+
+/* ===== OMEGIA NEO ÉLÉGANCE : finition visuelle ===== */
+:root {
+  color-scheme: light;
+  --violet: #7652d6;
+  --violet-dark: #5836b5;
+  --lavender: #eee9ff;
+  --ink: #25213a;
+  --muted: #6b6880;
+  --line: #e5e0ef;
+  --surface: #ffffff;
+  --page: #f5f3fb;
+  --green: #19a994;
+  --green-dark: #138b7b;
+  --blue: #477fe0;
+  --accent: #19b9a5;
+  --card-shadow: 0 5px 18px rgba(42, 27, 83, .055);
+}
+html, body { background: var(--page); color: var(--ink); }
+body { font-family: Inter, "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: -.01em; }
+h1, h2, h3, .wordmark, .header-title { letter-spacing: -.025em; }
+button, input, textarea { -webkit-tap-highlight-color: transparent; }
+button, a, input, textarea, .chat-row, .set-row, .side-item {
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+:focus-visible { outline: 3px solid rgba(118, 82, 214, .42); outline-offset: 2px; }
+.brand-mark, .header-logo {
+  background: linear-gradient(145deg, #9675f4 0%, #7652d6 52%, #5536ae 100%);
+  box-shadow: 0 7px 18px rgba(118, 82, 214, .24);
+}
+.wordmark, .header-title { color: var(--violet); }
+.primary-button, .create-button {
+  background: linear-gradient(120deg, #8060e2, #6846c8);
+  border-radius: 12px;
+  box-shadow: 0 5px 14px rgba(118, 82, 214, .18);
+}
+.primary-button:hover, .create-button:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.login-card, .profile-section, .create-panel, .lit-card, .lit-detail-card, .set-block {
+  border: 1px solid rgba(118, 82, 214, .07);
+  box-shadow: var(--card-shadow);
+}
+.login-card { border-radius: 20px; }
+input, textarea { border-radius: 12px; }
+.app-header { box-shadow: 0 2px 12px rgba(35, 25, 65, .035); }
+.icon-btn { background: var(--lavender); }
+.icon-btn:hover { background: #e3d9ff; transform: translateY(-1px); }
+.bottom-nav { box-shadow: 0 -5px 20px rgba(35, 25, 65, .055); }
+.bottom-nav button.active, .ptab.active { color: var(--violet); }
+.chat-row, .post-card, .story-card { border-radius: 16px; }
+.side-menu-panel { border-radius: 0 20px 20px 0; }
+.profile-cover { background: linear-gradient(125deg, #a38af2 0%, #7652d6 52%, #26335e 100%); }
+.lit-add-btn { background: linear-gradient(145deg, #9675f4, #6341c5); }
+body.dark-mode {
+  --card-shadow: 0 8px 24px rgba(0, 0, 0, .16);
+  color-scheme: dark;
+}
+body.dark-mode .app-header { box-shadow: 0 2px 14px rgba(0, 0, 0, .18); }
+body.dark-mode .bottom-nav { box-shadow: 0 -5px 20px rgba(0, 0, 0, .22); }
+body.dark-mode .icon-btn:hover { background: #39304f; }
+body.dark-mode .primary-button,
+body.dark-mode .create-button { color: #fff; }
+body.dark-mode .footer { color: #a39bb8; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }

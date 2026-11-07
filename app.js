@@ -418,14 +418,25 @@ $("accSaveBtn")?.addEventListener("click", async () => {
   }
 });
 
-// Mode sombre
+// Thème OMEGIA : choix clair/sombre mémorisé sur cet appareil.
 const DARK_KEY = "omegia.dark";
 function applyDarkMode(on) {
   document.body.classList.toggle("dark-mode", on);
-  if ($("darkModeState")) $("darkModeState").textContent = on ? "On" : "Off";
+  document.documentElement.style.colorScheme = on ? "dark" : "light";
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) themeColor.setAttribute("content", on ? "#151320" : "#7652d6");
+  const state = $("darkModeState");
+  if (state) state.textContent = on ? "Sombre" : "Clair";
+  const toggle = $("toggleDarkMode");
+  if (toggle) {
+    toggle.setAttribute("aria-pressed", on ? "true" : "false");
+    toggle.querySelector(".set-ico")?.replaceChildren(document.createTextNode(on ? "☀️" : "🌙"));
+  }
   try { localStorage.setItem(DARK_KEY, on ? "1" : "0"); } catch {}
 }
-try { if (localStorage.getItem(DARK_KEY) === "1") applyDarkMode(true); } catch {}
+let savedTheme = null;
+try { savedTheme = localStorage.getItem(DARK_KEY); } catch {}
+applyDarkMode(savedTheme === "1");
 $("toggleDarkMode")?.addEventListener("click", () => {
   applyDarkMode(!document.body.classList.contains("dark-mode"));
 });
