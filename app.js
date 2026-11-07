@@ -180,13 +180,21 @@ const settingMessages = {
 
 document.querySelectorAll("[data-setting]").forEach((btn) => {
   btn.addEventListener("click", () => {
-    if (btn.dataset.setting === "privacy") {
+    const s = btn.dataset.setting;
+    if (s === "privacy" || s === "notifications" || s === "account") {
       $("sideMenu").hidden = true;
       showView("settings");
       return;
     }
-    alert(settingMessages[btn.dataset.setting] || "Bientôt disponible");
+    alert(settingMessages[s] || "Bientôt disponible");
     $("sideMenu").hidden = true;
+  });
+});
+
+// Depuis le profil → ouvrir Paramètres
+document.querySelectorAll("#view-profile [data-setting]").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    // déjà géré au-dessus pour privacy/notifications
   });
 });
 
