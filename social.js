@@ -46,6 +46,8 @@ document.querySelectorAll("[data-nav='friends'],[data-goto='friends']").forEach(
 document.querySelectorAll("[data-nav='home']").forEach(b=>b.addEventListener("click",()=>setTimeout(loadFeed,150)));
 document.querySelectorAll("[data-nav='status'],[data-goto='status']").forEach(b=>b.addEventListener("click",()=>setTimeout(loadStatuses,150)));
 }
-async function boot(){try{db=await ready;const {data:{session}}=await db.auth.getSession();if(!session)return;user=session.user;bind();await refreshProfile();await Promise.allSettled([loadFeed(),loadStories(),loadStatuses(),loadFriends(),loadChats()]);db.auth.onAuthStateChange(e=>{if(e==="SIGNED_OUT"){user=null;active=null;if(channel)db.removeChannel(channel);}});}catch(e){console.warn("OMEGIA:",e);toast("Services sociaux : "+e.message);}}
+let bound=false, initializedUserId=null;
+async function initForUser(nextUser){if(!nextUser||initializedUserId===nextUser.id)return;user=nextUser;initializedUserId=nextUser.id;if(!bound){bind();bound=true;}await refreshProfile();await Promise.allSettled([loadFeed(),loadStories(),loadStatuses(),loadFriends(),loadChats()]);}
+async function boot(){try{db=await ready;db.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){user=null;initializedUserId=null;active=null;if(channel)db.removeChannel(channel);return;}if((event==="SIGNED_IN"||event==="INITIAL_SESSION"||event==="TOKEN_REFRESHED")&&session?.user){setTimeout(()=>initForUser(session.user).catch(e=>{console.warn("OMEGIA:",e);toast("Services sociaux : "+e.message);}),0);}});const {data:{session}}=await db.auth.getSession();if(session?.user)await initForUser(session.user);}catch(e){console.warn("OMEGIA:",e);toast("Services sociaux : "+e.message);}}
 window.addEventListener("load",()=>setTimeout(boot,300));
 })();
