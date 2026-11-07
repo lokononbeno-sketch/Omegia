@@ -167,7 +167,8 @@ const settingMessages = {
   games: "Jeux — bientôt disponible",
   ads: "Espace Pubs — bientôt disponible",
   avatars: "Avatars — bientôt disponible",
-  assistance: "Assistance — bientôt disponible"
+  assistance: "Assistance — bientôt disponible",
+  mail: "Mail — boîte de réception OMEGIA bientôt disponible"
 };
 
 document.querySelectorAll("[data-setting]").forEach((btn) => {
@@ -191,6 +192,111 @@ $("searchBtn")?.addEventListener("click", () => alert("Recherche — bientôt di
 $("notifBtn")?.addEventListener("click", () => alert("Centre de notifications — bientôt disponible."));
 $("friendsSearch")?.addEventListener("click", () => alert("Rechercher des amis — bientôt disponible."));
 $("seeAllInvites")?.addEventListener("click", () => alert("Toutes les invitations — bientôt."));
+
+// ----- Conversation privée -----
+$("demoChatOpen")?.addEventListener("click", () => {
+  showView("chat");
+  // cacher la bottom nav pendant la conversation pour un look plein écran type WhatsApp
+  document.querySelector(".bottom-nav")?.classList.add("hidden-for-chat");
+  document.querySelector(".app-header")?.classList.add("hidden-for-chat");
+  scrollChatToBottom();
+});
+$("chatBack")?.addEventListener("click", () => {
+  showView("messages");
+  document.querySelector(".bottom-nav")?.classList.remove("hidden-for-chat");
+  document.querySelector(".app-header")?.classList.remove("hidden-for-chat");
+  $("emojiPanel").hidden = true;
+});
+$("chatVideo")?.addEventListener("click", () => alert("Appel vidéo — bientôt disponible (WebRTC)."));
+$("chatCall")?.addEventListener("click", () => alert("Appel vocal — bientôt disponible (WebRTC)."));
+$("chatMore")?.addEventListener("click", () => alert("Options de la conversation — bientôt."));
+$("chatAttach")?.addEventListener("click", () => alert("Pièce jointe (photo, document, etc.) — bientôt."));
+$("chatCam")?.addEventListener("click", () => alert("Caméra — bientôt disponible."));
+$("chatPeerBtn")?.addEventListener("click", () => alert("Profil du contact — bientôt."));
+
+function scrollChatToBottom() {
+  const box = $("chatMessages");
+  if (box) box.scrollTop = box.scrollHeight;
+}
+
+// Micro ↔ Envoyer selon le contenu de l’input
+const chatInput = $("chatInput");
+const micSend = $("chatMicSend");
+function updateMicSend() {
+  if (!chatInput || !micSend) return;
+  const hasText = chatInput.value.trim().length > 0;
+  micSend.classList.toggle("sending", hasText);
+  micSend.setAttribute("aria-label", hasText ? "Envoyer" : "Note vocale");
+}
+chatInput?.addEventListener("input", updateMicSend);
+chatInput?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && chatInput.value.trim()) {
+    e.preventDefault();
+    sendDemoMessage();
+  }
+});
+micSend?.addEventListener("click", () => {
+  if (chatInput?.value.trim()) sendDemoMessage();
+  else alert("Note vocale — bientôt disponible.\nMaintiens le bouton pour enregistrer (comme WhatsApp).");
+});
+
+function sendDemoMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  const box = $("chatMessages");
+  if (!box) return;
+  const now = new Date();
+  const time = now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const div = document.createElement("div");
+  div.className = "bubble out";
+  div.innerHTML = `<div class="bubble-text"></div><div class="bubble-meta">${time} <span class="ticks">✓</span></div>`;
+  div.querySelector(".bubble-text").textContent = text;
+  box.appendChild(div);
+  chatInput.value = "";
+  updateMicSend();
+  scrollChatToBottom();
+}
+
+// Emojis
+const EMOJIS = ["😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","😋","😎","😍","🥰","😘","😗","😙","😚","🙂","🤗","🤩","🤔","🤨","😐","😑","😶","🙄","😏","😣","😥","😮","🤐","😯","😪","😫","🥱","😴","😌","😛","😜","😝","🤤","😒","😓","😔","😕","🙃","🤑","😲","🙁","😖","😞","😟","😤","😢","😭","😦","😧","😨","😩","🤯","😬","😰","😱","🥵","🥶","😳","🤪","😵","😡","😠","🤬","😷","🤒","🤕","🤢","🤮","🤧","😇","🥳","🥺","🤠","🤡","🤥","🤫","🤭","🧐","🤓","😈","👿","👹","goblin","💀","👻","👽","🤖","💩","😺","😸","😹","😻","😼","😽","🙀","😿","😾","👋","🤚","🖐","✋","🖖","👌","🤏","✌️","🤞","🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝️","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","💪"];
+// fix invalid emoji labels
+const CLEAN_EMOJIS = EMOJIS.filter((e) => e.length <= 4 && e !== "goblin");
+function fillEmojiGrid() {
+  const grid = $("emojiGrid");
+  if (!grid || grid.childElementCount) return;
+  CLEAN_EMOJIS.forEach((em) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = em;
+    b.addEventListener("click", () => {
+      if (chatInput) {
+        chatInput.value += em;
+        chatInput.focus();
+        updateMicSend();
+      }
+    });
+    grid.appendChild(b);
+  });
+}
+$("chatEmoji")?.addEventListener("click", () => {
+  const panel = $("emojiPanel");
+  if (!panel) return;
+  panel.hidden = !panel.hidden;
+  if (!panel.hidden) fillEmojiGrid();
+});
+
+// Installer depuis le menu
+$("sideInstall")?.addEventListener("click", async () => {
+  $("sideMenu").hidden = true;
+  if (deferredInstall) {
+    deferredInstall.prompt();
+    await deferredInstall.userChoice;
+    deferredInstall = null;
+    if ($("installBtn")) $("installBtn").hidden = true;
+  } else {
+    alert("Pour installer OMEGIA : utilise le menu de ton navigateur (Ajouter à l’écran d’accueil) ou le bouton Installer sur la page d’accueil.");
+  }
+});
 
 // Menu latéral
 $("menuBtn")?.addEventListener("click", () => { $("sideMenu").hidden = false; });
