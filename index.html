@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- ========== LANDING / AUTH (visiteurs) ========== -->
+  <!-- ========== LANDING / AUTH ========== -->
   <main class="landing" id="landing">
     <section class="landing-copy" aria-label="Présentation d'OMEGIA">
       <div class="logo"><span class="brand-mark" aria-hidden="true">Ω</span><span class="wordmark">OMEGIA</span></div>
@@ -48,60 +48,68 @@
       </div>
 
       <p class="form-message" id="formMessage" role="status" aria-live="polite"></p>
-
-      <!-- Ancien memberArea conservé pour compatibilité, masqué -->
       <div id="memberArea" hidden></div>
     </section>
   </main>
 
-  <!-- ========== APP SHELL (membre connecté) ========== -->
+  <!-- ========== APP SHELL ========== -->
   <div id="appShell" class="app-shell" hidden>
     <!-- Header -->
     <header class="app-header">
       <div class="header-left">
+        <button type="button" class="icon-btn menu-trigger" id="menuBtn" aria-label="Menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
         <span class="header-logo">Ω</span>
         <span class="header-title">OMEGIA</span>
       </div>
       <div class="header-actions">
-        <button type="button" class="icon-btn" id="searchBtn" aria-label="Rechercher" title="Rechercher">
+        <button type="button" class="icon-btn" id="searchBtn" aria-label="Rechercher">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
         </button>
-        <button type="button" class="icon-btn" id="notifBtn" aria-label="Notifications" title="Notifications">
+        <button type="button" class="icon-btn" id="notifBtn" aria-label="Notifications">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <span class="badge" id="notifBadge" hidden>0</span>
-        </button>
-        <button type="button" class="icon-btn" id="menuBtn" aria-label="Menu" title="Menu">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
         </button>
       </div>
     </header>
 
-    <!-- Contenu principal -->
     <main class="app-main" id="appMain">
-      <!-- ===== ACCUEIL (Feed) ===== -->
+      <!-- ===== ACCUEIL ===== -->
       <section class="view" id="view-home" data-view="home">
-        <div class="composer-card" id="openComposer">
+        <!-- Composer style Facebook -->
+        <div class="composer-bar">
           <div class="composer-avatar" id="homeAvatar">Ω</div>
-          <div class="composer-placeholder">Quoi de neuf, <span id="homeFirstName">…</span> ?</div>
+          <button type="button" class="composer-input" id="openComposer">Quoi de neuf ?</button>
+          <button type="button" class="composer-photo" id="composerPhoto" aria-label="Photo" title="Photo / Vidéo">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </button>
         </div>
 
+        <!-- Stories / Statuts (rangée) -->
         <div class="stories-row" id="homeStories">
-          <!-- Statuts récents (aperçu) -->
+          <button type="button" class="story-card create-story" id="createStoryBtn">
+            <div class="story-thumb create">
+              <span class="plus">+</span>
+            </div>
+            <span class="story-label">Créer une story</span>
+          </button>
+          <!-- d’autres stories apparaîtront ici plus tard -->
         </div>
 
         <div class="feed" id="feed">
           <article class="post-card demo">
             <div class="post-header">
               <div class="post-avatar">Ω</div>
-              <div>
+              <div class="post-info">
                 <div class="post-author">OMEGIA</div>
-                <div class="post-meta">Bienvenue · maintenant</div>
+                <div class="post-meta">Bienvenue · maintenant · 🌐</div>
               </div>
+              <button type="button" class="post-more" aria-label="Plus">⋯</button>
             </div>
             <div class="post-body">
               Bienvenue sur <strong>OMEGIA</strong> 🎉<br><br>
-              Ici tu retrouveras bientôt ton fil d’actualité, les publications de tes proches, les réactions, les commentaires…
-              et aussi la messagerie, les appels et les statuts.
+              Un seul espace pour le fil d’actualité, les stories, les messages, les appels et tes proches.
             </div>
             <div class="post-actions">
               <button type="button" class="action-btn" disabled>👍 J’aime</button>
@@ -117,22 +125,20 @@
         </div>
       </section>
 
-      <!-- ===== STATUT ===== -->
+      <!-- ===== STATUT (WhatsApp-style) ===== -->
       <section class="view" id="view-status" data-view="status" hidden>
         <div class="status-header">
           <h2>Statuts</h2>
           <p class="muted">Partage un moment qui disparaît après 24 h</p>
         </div>
 
-        <div class="my-status-card" id="myStatusCard">
-          <div class="status-avatar add">
-            <span>+</span>
-          </div>
-          <div>
+        <button type="button" class="my-status-card" id="myStatusCard">
+          <div class="status-avatar add"><span>+</span></div>
+          <div class="status-text">
             <div class="status-name">Mon statut</div>
             <div class="status-meta">Appuie pour ajouter un statut</div>
           </div>
-        </div>
+        </button>
 
         <div class="status-section-title">Mises à jour récentes</div>
         <div class="status-list" id="statusList">
@@ -143,18 +149,42 @@
         </div>
       </section>
 
-      <!-- ===== CRÉER (composer) ===== -->
-      <section class="view" id="view-create" data-view="create" hidden>
-        <div class="create-panel">
-          <h2>Créer une publication</h2>
-          <textarea id="createText" placeholder="Écris quelque chose…" rows="5"></textarea>
-          <div class="create-tools">
-            <button type="button" class="tool-btn" disabled title="Photo / Vidéo bientôt">📷 Photo</button>
-            <button type="button" class="tool-btn" disabled title="Bientôt">😊 Feeling</button>
-            <button type="button" class="tool-btn" disabled title="Bientôt">📍 Lieu</button>
+      <!-- ===== AMIS ===== -->
+      <section class="view" id="view-friends" data-view="friends" hidden>
+        <div class="friends-top">
+          <h2>Ami(e)s</h2>
+          <button type="button" class="icon-btn" id="friendsSearch" aria-label="Rechercher des amis">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          </button>
+        </div>
+
+        <div class="friends-chips">
+          <button type="button" class="chip active" data-friends-tab="online">● En ligne</button>
+          <button type="button" class="chip" data-friends-tab="suggestions">Suggestions</button>
+          <button type="button" class="chip" data-friends-tab="all">Vos ami(e)s</button>
+        </div>
+
+        <div class="friends-notif" id="friendsNotif" hidden>
+          <!-- ex: X a accepté votre invitation -->
+        </div>
+
+        <div class="invites-header">
+          <span>Invitations <strong id="inviteCount" class="invite-count">0</strong></span>
+          <button type="button" class="link-text" id="seeAllInvites">Voir tout</button>
+        </div>
+
+        <div class="invite-list" id="inviteList">
+          <div class="empty-state compact">
+            <p>Aucune invitation pour le moment.</p>
+            <p class="muted">Les demandes d’ami apparaîtront ici.</p>
           </div>
-          <button type="button" class="primary-button" id="publishBtn" disabled>Publier (bientôt disponible)</button>
-          <p class="muted small">La publication réelle arrivera dès que les tables Supabase seront prêtes.</p>
+        </div>
+
+        <div class="friends-section-title">Suggestions</div>
+        <div class="suggest-list" id="suggestList">
+          <div class="empty-state compact">
+            <p class="muted">Les suggestions d’amis arriveront bientôt.</p>
+          </div>
         </div>
       </section>
 
@@ -162,36 +192,56 @@
       <section class="view" id="view-messages" data-view="messages" hidden>
         <div class="messages-header">
           <h2>Messages</h2>
-          <button type="button" class="icon-btn" id="newChatBtn" aria-label="Nouvelle conversation" title="Nouvelle conversation">
+          <button type="button" class="icon-btn" id="newChatBtn" aria-label="Nouvelle conversation">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
           </button>
         </div>
         <div class="chat-list" id="chatList">
           <div class="empty-state">
             <p>Aucune conversation pour le moment.</p>
-            <p class="muted">Tes messages privés et de groupe apparaîtront ici (texte, photos, notes vocales, appels…).</p>
+            <p class="muted">Messages privés, photos, notes vocales et appels arriveront ici.</p>
           </div>
         </div>
       </section>
 
       <!-- ===== PROFIL ===== -->
       <section class="view" id="view-profile" data-view="profile" hidden>
-        <div class="profile-cover"></div>
+        <div class="profile-cover">
+          <button type="button" class="cover-edit" id="editCover" aria-label="Modifier la couverture">📷</button>
+        </div>
         <div class="profile-main">
-          <div class="profile-avatar" id="profileAvatar">Ω</div>
-          <h1 class="profile-name" id="profileName">…</h1>
-          <p class="profile-bio" id="profileBio">Ajoute une bio pour te présenter</p>
-          <div class="profile-meta" id="profileMeta">
-            <span id="profileLocation">📍 Lieu non renseigné</span>
+          <div class="profile-avatar-wrap">
+            <div class="profile-avatar" id="profileAvatar">Ω</div>
+            <button type="button" class="avatar-cam" id="editAvatar" aria-label="Modifier la photo">📷</button>
           </div>
+          <h1 class="profile-name" id="profileName">…</h1>
+          <p class="profile-stats" id="profileStats">0 follower · 0 suivi(e)s</p>
+          <p class="profile-bio" id="profileBio">Ajoute une bio pour te présenter</p>
+
+          <div class="profile-details" id="profileDetails">
+            <span id="profileWork">💼 Travail non renseigné</span>
+            <span id="profileLocation">📍 Lieu non renseigné</span>
+            <span id="profileSchool">🎓 Études non renseignées</span>
+          </div>
+
           <div class="profile-actions">
             <button type="button" class="primary-button small" id="editProfileBtn">Modifier le profil</button>
-            <button type="button" class="create-button small" id="bioToggle">Activer l’empreinte ou le visage</button>
+            <button type="button" class="secondary-btn small" id="profileMoreBtn">⋯</button>
           </div>
         </div>
 
+        <div class="profile-tabs">
+          <button type="button" class="ptab active" data-ptab="all">Tous</button>
+          <button type="button" class="ptab" data-ptab="photos">Photos</button>
+          <button type="button" class="ptab" data-ptab="reels">Reels</button>
+          <button type="button" class="ptab" data-ptab="events">Événements</button>
+        </div>
+
         <div class="profile-section">
-          <h3>À propos</h3>
+          <div class="section-head">
+            <h3>Informations personnelles</h3>
+            <button type="button" class="icon-btn tiny" id="editAbout">✏️</button>
+          </div>
           <div class="about-list">
             <div class="about-item"><span class="label">E-mail</span><span id="profileEmail">—</span></div>
             <div class="about-item"><span class="label">Membre depuis</span><span id="profileSince">—</span></div>
@@ -199,14 +249,28 @@
         </div>
 
         <div class="profile-section">
-          <h3>Paramètres</h3>
+          <h3>Paramètres rapides</h3>
           <div class="settings-list">
+            <button type="button" class="settings-item" id="bioToggle">Activer l’empreinte ou le visage</button>
             <button type="button" class="settings-item" data-setting="privacy">Confidentialité et sécurité</button>
             <button type="button" class="settings-item" data-setting="notifications">Notifications</button>
-            <button type="button" class="settings-item" data-setting="account">Compte</button>
-            <button type="button" class="settings-item" data-setting="help">Aide et support</button>
             <button type="button" class="settings-item danger" id="logoutBtn">Se déconnecter</button>
           </div>
+        </div>
+      </section>
+
+      <!-- ===== CRÉER (composer plein) ===== -->
+      <section class="view" id="view-create" data-view="create" hidden>
+        <div class="create-panel">
+          <h2>Créer une publication</h2>
+          <textarea id="createText" placeholder="Quoi de neuf ?" rows="5"></textarea>
+          <div class="create-tools">
+            <button type="button" class="tool-btn" disabled>📷 Photo / Vidéo</button>
+            <button type="button" class="tool-btn" disabled>😊 Feeling</button>
+            <button type="button" class="tool-btn" disabled>📍 Lieu</button>
+          </div>
+          <button type="button" class="primary-button" id="publishBtn" disabled>Publier (bientôt disponible)</button>
+          <p class="muted small">La publication réelle arrivera avec les tables Supabase.</p>
         </div>
       </section>
     </main>
@@ -221,11 +285,10 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
         <span>Statut</span>
       </button>
-      <button type="button" class="nav-item create" data-nav="create" aria-label="Créer">
-        <div class="create-circle">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
-        </div>
-        <span>Créer</span>
+      <button type="button" class="nav-item" data-nav="friends" aria-label="Ami(e)s">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Amis</span>
+        <span class="badge nav-badge" id="friendsBadge" hidden>0</span>
       </button>
       <button type="button" class="nav-item" data-nav="messages" aria-label="Messages">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -239,7 +302,7 @@
     </nav>
   </div>
 
-  <!-- Dialog inscription (inchangé) -->
+  <!-- Dialog inscription -->
   <dialog id="signupDialog" aria-labelledby="signupTitle">
     <div class="dialog-head">
       <div>
@@ -264,21 +327,85 @@
     </form>
   </dialog>
 
-  <!-- Menu latéral simple -->
+  <!-- MENU LATÉRAL (style Facebook) -->
   <div id="sideMenu" class="side-menu" hidden>
     <div class="side-menu-backdrop" id="sideMenuClose"></div>
     <div class="side-menu-panel">
-      <div class="side-menu-header">
-        <span class="header-logo">Ω</span>
-        <strong>OMEGIA</strong>
+      <div class="side-user" id="sideUser">
+        <div class="side-avatar" id="sideAvatar">Ω</div>
+        <div>
+          <div class="side-name" id="sideName">…</div>
+          <div class="side-sub">Voir votre profil</div>
+        </div>
       </div>
-      <button type="button" class="side-item" data-goto="profile">Mon profil</button>
-      <button type="button" class="side-item" data-goto="messages">Messages</button>
-      <button type="button" class="side-item" data-setting="notifications">Notifications</button>
-      <button type="button" class="side-item" data-setting="privacy">Confidentialité</button>
-      <button type="button" class="side-item" data-setting="help">Aide</button>
+
+      <div class="side-section-title">Vos raccourcis</div>
+      <div class="side-shortcuts" id="sideShortcuts">
+        <!-- placeholders -->
+      </div>
+
+      <button type="button" class="side-item" data-goto="friends">
+        <span class="si-icon">👥</span> Ami(e)s
+      </button>
+      <button type="button" class="side-item" data-goto="messages">
+        <span class="si-icon">💬</span> Messages
+      </button>
+      <button type="button" class="side-item" data-goto="status">
+        <span class="si-icon">○</span> Statuts
+      </button>
+      <button type="button" class="side-item" data-setting="saved">
+        <span class="si-icon">🔖</span> Enregistrements
+      </button>
+      <button type="button" class="side-item" data-setting="memories">
+        <span class="si-icon">🕐</span> Souvenirs
+      </button>
+      <button type="button" class="side-item" data-setting="groups">
+        <span class="si-icon">👥</span> Groupes
+      </button>
+      <button type="button" class="side-item" data-setting="pages">
+        <span class="si-icon">🏳️</span> Pages
+      </button>
+      <button type="button" class="side-item" data-setting="events">
+        <span class="si-icon">📅</span> Événements
+      </button>
+      <button type="button" class="side-item" data-setting="marketplace">
+        <span class="si-icon">🏪</span> Marketplace
+      </button>
+      <button type="button" class="side-item" data-setting="reels">
+        <span class="si-icon">▶</span> Reels
+      </button>
+
+      <button type="button" class="side-more" id="sideSeeMore">Voir plus</button>
+
+      <div id="sideMore" hidden>
+        <button type="button" class="side-item" data-setting="feeds">
+          <span class="si-icon">📡</span> Fils
+        </button>
+        <button type="button" class="side-item" data-setting="games">
+          <span class="si-icon">🎮</span> Jeux
+        </button>
+        <button type="button" class="side-item" data-setting="ads">
+          <span class="si-icon">📢</span> Espace Pubs
+        </button>
+        <button type="button" class="side-item" data-setting="avatars">
+          <span class="si-icon">🧑</span> Avatars
+        </button>
+        <button type="button" class="side-item" data-setting="assistance">
+          <span class="si-icon">🏠</span> Assistance
+        </button>
+      </div>
+
       <hr>
-      <button type="button" class="side-item danger" id="sideLogout">Se déconnecter</button>
+
+      <button type="button" class="side-item" data-setting="help">
+        <span class="si-icon">❓</span> Aide et assistance
+      </button>
+      <button type="button" class="side-item" data-setting="privacy">
+        <span class="si-icon">⚙️</span> Paramètres et confidentialité
+      </button>
+      <button type="button" class="side-item danger" id="sideLogout">
+        <span class="si-icon">🚪</span> Se déconnecter
+      </button>
     </div>
   </div>
 
