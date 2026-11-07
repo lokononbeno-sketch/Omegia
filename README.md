@@ -36,7 +36,10 @@ The first milestone is a responsive, branded PWA shell with a member sign-in / r
 
 - `index.html` — application entry point
 - `styles.css` — responsive visual system
-- `app.js` — Supabase authentication (sign-up, sign-in, recovery, sign-out) and PWA install button
+- `app.js` — login page: Supabase sign-up, sign-in, password recovery, fingerprint/face lock screen, PWA install button
+- `shared.js` — code shared by the pages (Supabase loader, error messages, fingerprint/face helpers)
+- `home.html`, `home.css`, `home.js` — news feed: publish, like, comment, new members
+- `supabase/migrations/` — SQL for the database (profiles, posts, likes, comments) with Row Level Security
 - `manifest.webmanifest` — PWA metadata
 - `sw.js` — service worker for the static application shell
 - `assets/omega.svg` — OMEGIA Ω mark
@@ -50,7 +53,8 @@ Open `index.html` in a modern browser, or serve the repository with any static w
 - [x] Establish project identity and responsive PWA shell
 - [x] Select and configure the production backend (Supabase)
 - [ ] Implement real registration, sign-in, recovery and authorization
-- [ ] Build profiles, feed, posts, comments and reactions
+- [x] Build feed, posts, comments and likes (text only)
+- [ ] Build profile pages, photos and videos
 - [ ] Build stories, groups and discovery
 - [ ] Build private/group messaging and attachments
 - [ ] Add notifications and presence
