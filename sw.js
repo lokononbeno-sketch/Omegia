@@ -1,4 +1,4 @@
-const CACHE = "omegia-shell-v3";
+const CACHE = "omegia-shell-v4";
 const FILES = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./assets/omega.svg"];
 
 self.addEventListener("install", (event) => {
