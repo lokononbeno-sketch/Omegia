@@ -6,5 +6,12 @@
   "backgroundColor": "#171326",
   "android": {
     "allowMixedContent": false
+  },
+  "server": {
+    "url": "https://lokononbeno.gitlab.io/omegia-social/",
+    "cleartext": false,
+    "allowNavigation": [
+      "lokononbeno.gitlab.io"
+    ]
   }
 }
