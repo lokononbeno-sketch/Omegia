@@ -11,6 +11,6 @@
   "background_color": "#f7f6fb",
   "theme_color": "#7652d6",
   "icons": [
-    { "src": "assets/omega.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "assets/omega.svg", "sizes": "192x192 512x512", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }

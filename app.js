@@ -450,13 +450,6 @@ $("friendsSearch")?.addEventListener("click", () => alert("Rechercher des amis �
 $("seeAllInvites")?.addEventListener("click", () => alert("Toutes les invitations — bientôt."));
 
 // ----- Conversation privée -----
-$("demoChatOpen")?.addEventListener("click", () => {
-  showView("chat");
-  // cacher la bottom nav pendant la conversation pour un look plein écran type WhatsApp
-  document.querySelector(".bottom-nav")?.classList.add("hidden-for-chat");
-  document.querySelector(".app-header")?.classList.add("hidden-for-chat");
-  scrollChatToBottom();
-});
 $("chatBack")?.addEventListener("click", () => {
   showView("messages");
   document.querySelector(".bottom-nav")?.classList.remove("hidden-for-chat");
@@ -859,22 +852,76 @@ $("unlockBtn").addEventListener("click", async () => {
 $("year").textContent = new Date().getFullYear();
 
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
-  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch((error) => {
+      console.error("OMEGIA / Service Worker :", error);
+    });
+  });
 }
 
-let deferredInstall;
+// Installation PWA : conserver l'invite native jusqu'au clic de l'utilisateur.
+let deferredInstall = null;
+const installButton = $("installBtn");
+const sideInstallButton = $("sideInstall");
+
+function isAppInstalled() {
+  return window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true;
+}
+
+function updateInstallVisibility() {
+  if (isAppInstalled()) {
+    if (installButton) installButton.hidden = true;
+    if (sideInstallButton) sideInstallButton.hidden = true;
+  } else if (deferredInstall && installButton) {
+    installButton.hidden = false;
+  }
+}
+
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
   deferredInstall = event;
-  $("installBtn").hidden = false;
+  updateInstallVisibility();
 });
-$("installBtn").addEventListener("click", async () => {
-  if (!deferredInstall) return;
-  deferredInstall.prompt();
-  await deferredInstall.userChoice;
+
+window.addEventListener("appinstalled", () => {
   deferredInstall = null;
-  $("installBtn").hidden = true;
+  if (installButton) installButton.hidden = true;
+  if (sideInstallButton) sideInstallButton.hidden = true;
+  alert("OMEGIA est installée sur votre appareil. 🎉");
 });
+
+async function installOMEGIA() {
+  if (isAppInstalled()) {
+    alert("OMEGIA est déjà installée sur cet appareil.");
+    return;
+  }
+
+  if (deferredInstall) {
+    try {
+      deferredInstall.prompt();
+      const choice = await deferredInstall.userChoice;
+      deferredInstall = null;
+      if (installButton) installButton.hidden = true;
+      if (choice && choice.outcome === "accepted") {
+        alert("Installation acceptée. Suivez les dernières étapes affichées par votre téléphone.");
+      }
+    } catch (error) {
+      console.error("OMEGIA / Installation :", error);
+      alert("L'installation n'a pas pu démarrer. Ouvrez le menu de Chrome puis choisissez « Installer l'application » ou « Ajouter à l'écran d'accueil ».");
+    }
+    return;
+  }
+
+  alert("OMEGIA n'est pas encore proposée à l'installation par ce navigateur. Sur Android, ouvrez cette page dans Chrome, vérifiez que vous êtes connecté à Internet, puis ouvrez le menu ⋮ et choisissez « Installer l'application » ou « Ajouter à l'écran d'accueil ». Si cette option n'apparaît pas, actualisez la page et réessayez.");
+}
+
+installButton?.addEventListener("click", installOMEGIA);
+sideInstallButton?.addEventListener("click", () => {
+  $("sideMenu").hidden = true;
+  installOMEGIA();
+});
+updateInstallVisibility();
 
 if (startsInRecovery) render("recovery");
 if (linkHadError) {
