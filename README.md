@@ -4,7 +4,7 @@
 
 OMEGIA is a member-only social and communication platform designed to bring together the social-network experience and private messaging in one installable application.
 
-> Project status: early foundation / prototype. Authentication, messaging, media storage, calls and production services are not yet implemented. The interface must never imply that these services are live before they are connected and tested.
+> Project status: early foundation / prototype. Authentication (Supabase Auth: sign-up, sign-in, password recovery) is connected. Messaging, media storage, calls and other production services are not yet implemented. The interface must never imply that these services are live before they are connected and tested.
 
 ## Product principles
 
@@ -30,13 +30,13 @@ OMEGIA is a member-only social and communication platform designed to bring toge
 
 ## Current foundation
 
-The first milestone is a responsive, branded PWA shell with a member sign-in / registration entry screen. This is a **front-end prototype only**. Do not store passwords in browser storage or implement fake client-side authentication. Real account access requires a trusted backend, secure password hashing, session management and server-side authorization.
+The first milestone is a responsive, branded PWA shell with a member sign-in / registration entry screen. Authentication is delegated to Supabase Auth (passwords are never stored in the browser). The Supabase *publishable* key in `app.js` is public by design, so every table must be protected with Row Level Security policies before any member data is added. The member area itself is not built yet.
 
 ## Repository structure
 
 - `index.html` — application entry point
 - `styles.css` — responsive visual system
-- `app.js` — navigation and accessible prototype interactions
+- `app.js` — Supabase authentication (sign-up, sign-in, recovery, sign-out) and PWA install button
 - `manifest.webmanifest` — PWA metadata
 - `sw.js` — service worker for the static application shell
 - `assets/omega.svg` — OMEGIA Ω mark
@@ -48,7 +48,7 @@ Open `index.html` in a modern browser, or serve the repository with any static w
 ## Roadmap
 
 - [x] Establish project identity and responsive PWA shell
-- [ ] Select and configure the production backend
+- [x] Select and configure the production backend (Supabase)
 - [ ] Implement real registration, sign-in, recovery and authorization
 - [ ] Build profiles, feed, posts, comments and reactions
 - [ ] Build stories, groups and discovery
