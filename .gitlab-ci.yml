@@ -18,7 +18,7 @@ android-apk:
   stage: build
   image: mingc/android-build-box:latest
   script:
-    - npm install --no-audit --no-fund
+    - npm install --include=dev --no-audit --no-fund
     - npm run build:android
     - cd android
     - ./gradlew assembleDebug --no-daemon
