@@ -167,6 +167,11 @@ dialog::backdrop { background: rgba(244, 242, 250, .85); }
 }
 .nav-item.active { color: var(--violet); }
 .nav-badge { top: 6px; right: calc(50% - 22px); }
+.bottom-nav.hidden-for-chat,
+.app-header.hidden-for-chat { display: none !important; }
+.chat-view {
+  height: 100dvh !important;
+}
 
 .view { padding: 10px 12px 24px; max-width: 680px; margin: 0 auto; }
 .empty-state { text-align: center; padding: 40px 20px; }
