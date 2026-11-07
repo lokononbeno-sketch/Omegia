@@ -1,0 +1,10 @@
+{
+  "appId": "com.omegia.social",
+  "appName": "OMEGIA",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "backgroundColor": "#171326",
+  "android": {
+    "allowMixedContent": false
+  }
+}
