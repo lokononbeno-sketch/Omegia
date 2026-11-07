@@ -83,13 +83,13 @@ function showView(name) {
   document.querySelectorAll(".nav-item").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.nav === name);
   });
-  // Quand on quitte la conversation, on réaffiche header + nav
   if (name !== "chat") {
     document.querySelector(".bottom-nav")?.classList.remove("hidden-for-chat");
     document.querySelector(".app-header")?.classList.remove("hidden-for-chat");
     const panel = $("emojiPanel");
     if (panel) panel.hidden = true;
   }
+  if (name === "literary") renderLiteraryGrid();
   const main = $("appMain");
   if (main) main.scrollTop = 0;
 }
@@ -158,6 +158,131 @@ function populateMemberUI() {
 }
 
 // Paramètres / placeholders
+// ----- Bénoli littéraire (stockage local pour l’instant) -----
+const LIT_KEY = "omegia.literary";
+function loadNovels() {
+  try { return JSON.parse(localStorage.getItem(LIT_KEY) || "[]"); } catch { return []; }
+}
+function saveNovels(list) {
+  try { localStorage.setItem(LIT_KEY, JSON.stringify(list)); } catch {}
+}
+
+// Exemple initial si vide (tu pourras le remplacer / supprimer)
+function ensureSampleNovels() {
+  let list = loadNovels();
+  if (list.length === 0) {
+    list = [{
+      id: "sample-1",
+      title: "Exemple — Mon premier roman",
+      price: "2 500 FCFA",
+      buyUrl: "https://example.com",
+      summary: "Remplace cet exemple par tes vrais romans.\nUn résumé accrocheur de l’histoire.",
+      excerpt: "Chapitre 1 (extrait gratuit)…\n\nIl était une fois…",
+      createdAt: Date.now()
+    }];
+    saveNovels(list);
+  }
+  return list;
+}
+
+function renderLiteraryGrid() {
+  const grid = $("litGrid");
+  const empty = $("litEmpty");
+  if (!grid) return;
+  const list = ensureSampleNovels();
+  grid.innerHTML = "";
+  if (!list.length) {
+    if (empty) empty.hidden = false;
+    return;
+  }
+  if (empty) empty.hidden = true;
+  list.forEach((n) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "lit-card";
+    btn.innerHTML = `
+      <div class="lit-card-cover">📖</div>
+      <div class="lit-card-body">
+        <div class="lit-card-title"></div>
+        <div class="lit-card-price"></div>
+      </div>`;
+    btn.querySelector(".lit-card-title").textContent = n.title;
+    btn.querySelector(".lit-card-price").textContent = n.price;
+    btn.addEventListener("click", () => openNovelDetail(n.id));
+    grid.appendChild(btn);
+  });
+}
+
+function openNovelDetail(id) {
+  const n = loadNovels().find((x) => x.id === id);
+  if (!n) return;
+  if ($("litDetailName")) $("litDetailName").textContent = n.title;
+  if ($("litDetailTitle")) $("litDetailTitle").textContent = n.title;
+  if ($("litDetailPrice")) $("litDetailPrice").textContent = n.price;
+  if ($("litDetailSummary")) $("litDetailSummary").textContent = n.summary || "—";
+  if ($("litDetailExcerpt")) $("litDetailExcerpt").textContent = n.excerpt || "Aucun extrait gratuit pour le moment.";
+  const buy = $("litBuyBtn");
+  if (buy) {
+    buy.href = n.buyUrl || "#";
+    buy.onclick = (e) => {
+      if (!n.buyUrl || n.buyUrl === "https://example.com") {
+        e.preventDefault();
+        alert("Configure le lien d’achat de ce roman (ton site / panier) pour activer le paiement.");
+      }
+    };
+  }
+  showView("lit-detail");
+}
+
+$("litAddBtn")?.addEventListener("click", () => {
+  ["litTitle", "litPrice", "litBuyUrl", "litSummary", "litExcerpt"].forEach((id) => {
+    if ($(id)) $(id).value = "";
+  });
+  if ($("litPdf")) $("litPdf").value = "";
+  setMessage("litFormMessage", "");
+  showView("lit-form");
+});
+$("litDetailBack")?.addEventListener("click", () => { showView("literary"); renderLiteraryGrid(); });
+$("litFormBack")?.addEventListener("click", () => { showView("literary"); renderLiteraryGrid(); });
+
+$("litPublishBtn")?.addEventListener("click", () => {
+  const title = $("litTitle")?.value.trim();
+  const price = $("litPrice")?.value.trim();
+  const buyUrl = $("litBuyUrl")?.value.trim();
+  const summary = $("litSummary")?.value.trim();
+  const excerpt = $("litExcerpt")?.value.trim() || "";
+  if (!title || !price || !buyUrl || !summary) {
+    setMessage("litFormMessage", "Titre, prix, lien d’achat et résumé sont obligatoires.", true);
+    return;
+  }
+  try {
+    // validation basique d’URL
+    new URL(buyUrl);
+  } catch {
+    setMessage("litFormMessage", "Le lien d’achat doit être une URL valide (https://…).", true);
+    return;
+  }
+  const list = loadNovels().filter((n) => n.id !== "sample-1"); // retire l’exemple dès qu’on publie
+  list.unshift({
+    id: "n-" + Date.now(),
+    title,
+    price,
+    buyUrl,
+    summary,
+    excerpt,
+    createdAt: Date.now()
+  });
+  saveNovels(list);
+  setMessage("litFormMessage", "Roman publié sur cet appareil.");
+  setTimeout(() => {
+    showView("literary");
+    renderLiteraryGrid();
+  }, 600);
+});
+
+// Quand on ouvre la vue literary, rafraîchir la grille
+const _origShowView = typeof showView === "function" ? null : null;
+
 const settingMessages = {
   privacy: "Confidentialité et sécurité — bientôt configurable",
   notifications: "Notifications — bientôt configurable",
@@ -168,7 +293,7 @@ const settingMessages = {
   groups: "Groupes — bientôt disponible",
   pages: "Pages — bientôt disponible",
   events: "Événements — bientôt disponible",
-  marketplace: "Marketplace — bientôt disponible",
+  marketplace: "Bénoli littéraire — ouvre depuis le menu",
   reels: "Reels — bientôt disponible",
   feeds: "Fils — bientôt disponible",
   games: "Jeux — bientôt disponible",
