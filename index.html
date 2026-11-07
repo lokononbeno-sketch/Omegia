@@ -373,6 +373,92 @@
         </div>
       </section>
 
+      <!-- ===== BÉNOLI LITTÉRAIRE ===== -->
+      <section class="view" id="view-literary" data-view="literary" hidden>
+        <div class="lit-header">
+          <div>
+            <h2>Bénoli littéraire</h2>
+            <p class="muted">Romans de Bénoli Lokonon</p>
+          </div>
+          <button type="button" class="lit-add-btn" id="litAddBtn" aria-label="Ajouter un roman" title="Nouveau roman">+</button>
+        </div>
+
+        <div class="lit-grid" id="litGrid">
+          <!-- Rempli par JS -->
+        </div>
+
+        <div class="empty-state" id="litEmpty" hidden>
+          <p>Aucun roman pour le moment.</p>
+          <p class="muted">Appuie sur + pour publier ton premier roman.</p>
+        </div>
+      </section>
+
+      <!-- Détail d’un roman -->
+      <section class="view" id="view-lit-detail" data-view="lit-detail" hidden>
+        <div class="settings-page-header">
+          <button type="button" class="icon-btn" id="litDetailBack" aria-label="Retour">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <h2 id="litDetailTitle">Roman</h2>
+        </div>
+
+        <article class="lit-detail-card">
+          <div class="lit-cover" id="litDetailCover">📖</div>
+          <h1 id="litDetailName">—</h1>
+          <p class="lit-price" id="litDetailPrice">—</p>
+          <div class="lit-section">
+            <h3>Résumé</h3>
+            <p id="litDetailSummary">—</p>
+          </div>
+          <div class="lit-section">
+            <h3>Extrait gratuit</h3>
+            <p id="litDetailExcerpt" class="lit-excerpt">—</p>
+          </div>
+          <a class="primary-button lit-buy" id="litBuyBtn" href="#" target="_blank" rel="noopener">Acheter / Payer</a>
+          <p class="muted small" style="text-align:center;margin-top:8px">Tu seras redirigé vers le site de vente pour finaliser l’achat.</p>
+        </article>
+      </section>
+
+      <!-- Formulaire nouveau roman -->
+      <section class="view" id="view-lit-form" data-view="lit-form" hidden>
+        <div class="settings-page-header">
+          <button type="button" class="icon-btn" id="litFormBack" aria-label="Retour">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <h2>Nouveau roman</h2>
+        </div>
+
+        <div class="create-panel">
+          <label class="acc-field">
+            <span>Titre *</span>
+            <input type="text" id="litTitle" maxlength="120" placeholder="Titre du roman" required>
+          </label>
+          <label class="acc-field">
+            <span>Prix (FCFA ou autre) *</span>
+            <input type="text" id="litPrice" maxlength="40" placeholder="Ex. 2 500 FCFA" required>
+          </label>
+          <label class="acc-field">
+            <span>Lien d’achat (ton site / panier) *</span>
+            <input type="url" id="litBuyUrl" placeholder="https://…" required>
+          </label>
+          <label class="acc-field">
+            <span>Résumé *</span>
+            <textarea id="litSummary" rows="4" maxlength="2000" placeholder="Résumé du roman" required></textarea>
+          </label>
+          <label class="acc-field">
+            <span>Extrait gratuit</span>
+            <textarea id="litExcerpt" rows="5" maxlength="5000" placeholder="Quelques pages ou un chapitre offert"></textarea>
+          </label>
+          <label class="acc-field">
+            <span>Fichier PDF (optionnel pour l’instant)</span>
+            <input type="file" id="litPdf" accept="application/pdf">
+          </label>
+          <button type="button" class="primary-button" id="litPublishBtn">Publier le roman</button>
+          <p class="form-message" id="litFormMessage" role="status"></p>
+          <p class="muted small">Pour l’instant les romans sont enregistrés sur cet appareil. La synchronisation cloud (Supabase + PDF) arrivera ensuite.</p>
+        </div>
+      </section>
+
       <!-- ===== PARAMÈTRES ET CONFIDENTIALITÉ ===== -->
       <section class="view" id="view-settings" data-view="settings" hidden>
         <div class="settings-page-header">
@@ -620,8 +706,8 @@
       <button type="button" class="side-item" data-setting="events">
         <span class="si-icon">📅</span> Événements
       </button>
-      <button type="button" class="side-item" data-setting="marketplace">
-        <span class="si-icon">🏪</span> Marketplace
+      <button type="button" class="side-item" data-goto="literary">
+        <span class="si-icon">📚</span> Bénoli littéraire
       </button>
       <button type="button" class="side-item" data-setting="reels">
         <span class="si-icon">▶</span> Reels
