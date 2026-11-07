@@ -188,7 +188,7 @@
         </div>
       </section>
 
-      <!-- ===== MESSAGES ===== -->
+      <!-- ===== MESSAGES (liste) ===== -->
       <section class="view" id="view-messages" data-view="messages" hidden>
         <div class="messages-header">
           <h2>Messages</h2>
@@ -197,10 +197,124 @@
           </button>
         </div>
         <div class="chat-list" id="chatList">
-          <div class="empty-state">
+          <!-- Démo : une conversation pour prévisualiser l’UI -->
+          <button type="button" class="chat-row" id="demoChatOpen" data-chat="demo">
+            <div class="chat-avatar">R</div>
+            <div class="chat-meta">
+              <div class="chat-top">
+                <span class="chat-name">Réa ❤️🙏🙌</span>
+                <span class="chat-time">12:38</span>
+              </div>
+              <div class="chat-preview">Gros yeux</div>
+            </div>
+          </button>
+          <div class="empty-state compact" id="chatListEmpty" hidden>
             <p>Aucune conversation pour le moment.</p>
-            <p class="muted">Messages privés, photos, notes vocales et appels arriveront ici.</p>
+            <p class="muted">Tes messages privés apparaîtront ici.</p>
           </div>
+        </div>
+      </section>
+
+      <!-- ===== CONVERSATION PRIVÉE (style WhatsApp) ===== -->
+      <section class="view chat-view" id="view-chat" data-view="chat" hidden>
+        <header class="chat-header">
+          <button type="button" class="chat-back" id="chatBack" aria-label="Retour">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <div class="chat-peer" id="chatPeerBtn">
+            <div class="chat-peer-avatar" id="chatPeerAvatar">R</div>
+            <div class="chat-peer-info">
+              <div class="chat-peer-name" id="chatPeerName">Réa ❤️🙏🙌</div>
+              <div class="chat-peer-status" id="chatPeerStatus"><span class="online-dot"></span> en ligne</div>
+            </div>
+          </div>
+          <div class="chat-header-actions">
+            <button type="button" class="icon-btn chat-action" id="chatVideo" aria-label="Appel vidéo" title="Appel vidéo">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            </button>
+            <button type="button" class="icon-btn chat-action" id="chatCall" aria-label="Appel vocal" title="Appel vocal">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.81.36 1.6.68 2.35a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.75.32 1.54.55 2.35.68A2 2 0 0 1 22 16.92z"/></svg>
+            </button>
+            <button type="button" class="icon-btn chat-action" id="chatMore" aria-label="Plus">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-day">Aujourd’hui</div>
+
+          <div class="bubble out">
+            <div class="bubble-text">Ok et les bandits là tu les tapes bien j’espère</div>
+            <div class="bubble-meta">21:05 <span class="ticks">✓✓</span></div>
+          </div>
+          <div class="bubble in">
+            <div class="bubble-text">Oui unh 😁</div>
+            <div class="bubble-meta">21:06</div>
+          </div>
+          <div class="bubble out">
+            <div class="bubble-text">Ah bon hein… je vais voir avant de croire</div>
+            <div class="bubble-meta">21:07 <span class="ticks">✓✓</span></div>
+          </div>
+          <div class="bubble in">
+            <div class="bubble-text">Hum 😅</div>
+            <div class="bubble-meta">21:16</div>
+          </div>
+          <div class="bubble out">
+            <div class="bubble-text">Oui oui. Envoi moi photo ou vidéo de toi je vais voir</div>
+            <div class="bubble-meta">21:17 <span class="ticks">✓✓</span></div>
+          </div>
+          <div class="bubble in">
+            <div class="bubble-text">En tenue ?</div>
+            <div class="bubble-meta">21:28</div>
+          </div>
+          <div class="bubble out">
+            <div class="bubble-text">Les deux on peut dire… genre avec et sans</div>
+            <div class="bubble-meta">21:29 <span class="ticks">✓✓</span></div>
+          </div>
+          <div class="bubble in">
+            <div class="bubble-text">Ah ok</div>
+            <div class="bubble-meta">22:08</div>
+          </div>
+          <div class="bubble out">
+            <div class="bubble-text">Oya</div>
+            <div class="bubble-meta">22:09 <span class="ticks">✓✓</span></div>
+          </div>
+          <div class="bubble out status-share">
+            <div class="status-preview-card">
+              <div class="sp-top">Réa ❤️🙏🙌 · Statut</div>
+              <div class="sp-body">🎬 Vidéo (0:15)</div>
+              <div class="sp-caption">Gros yeux</div>
+            </div>
+            <div class="bubble-meta">12:38 <span class="ticks">✓</span></div>
+          </div>
+        </div>
+
+        <div class="chat-input-bar">
+          <button type="button" class="chat-emoji-btn" id="chatEmoji" aria-label="Emojis et stickers">😊</button>
+          <div class="chat-input-wrap">
+            <input type="text" id="chatInput" placeholder="Message" autocomplete="off" enterkeyhint="send">
+            <button type="button" class="chat-attach" id="chatAttach" aria-label="Pièce jointe">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            </button>
+            <button type="button" class="chat-cam" id="chatCam" aria-label="Caméra">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </button>
+          </div>
+          <button type="button" class="chat-mic-send" id="chatMicSend" aria-label="Note vocale">
+            <svg class="icon-mic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            <svg class="icon-send" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" hidden><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+
+        <!-- Panneau emojis simple -->
+        <div class="emoji-panel" id="emojiPanel" hidden>
+          <div class="emoji-tabs">
+            <button type="button" class="etab active">😊</button>
+            <button type="button" class="etab">GIF</button>
+            <button type="button" class="etab">🎨</button>
+          </div>
+          <div class="emoji-grid" id="emojiGrid"></div>
         </div>
       </section>
 
@@ -373,6 +487,12 @@
       </button>
       <button type="button" class="side-item" data-setting="reels">
         <span class="si-icon">▶</span> Reels
+      </button>
+      <button type="button" class="side-item" data-setting="mail">
+        <span class="si-icon">✉️</span> Mail
+      </button>
+      <button type="button" class="side-item" id="sideInstall">
+        <span class="si-icon">⬇️</span> Installer l’application
       </button>
 
       <button type="button" class="side-more" id="sideSeeMore">Voir plus</button>
