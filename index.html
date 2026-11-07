@@ -11,7 +11,8 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="landing">
+  <!-- ========== LANDING / AUTH (visiteurs) ========== -->
+  <main class="landing" id="landing">
     <section class="landing-copy" aria-label="Présentation d'OMEGIA">
       <div class="logo"><span class="brand-mark" aria-hidden="true">Ω</span><span class="wordmark">OMEGIA</span></div>
       <h1>Retrouvez vos proches, partagez vos moments et rejoignez votre communauté.</h1>
@@ -48,13 +49,197 @@
 
       <p class="form-message" id="formMessage" role="status" aria-live="polite"></p>
 
-      <div id="memberArea" hidden>
-        <button class="create-button" type="button" id="bioToggle" hidden>Activer l'empreinte ou le visage</button>
-        <button class="link-button" type="button" id="logoutBtn">Se déconnecter</button>
-      </div>
+      <!-- Ancien memberArea conservé pour compatibilité, masqué -->
+      <div id="memberArea" hidden></div>
     </section>
   </main>
 
+  <!-- ========== APP SHELL (membre connecté) ========== -->
+  <div id="appShell" class="app-shell" hidden>
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <span class="header-logo">Ω</span>
+        <span class="header-title">OMEGIA</span>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="icon-btn" id="searchBtn" aria-label="Rechercher" title="Rechercher">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        </button>
+        <button type="button" class="icon-btn" id="notifBtn" aria-label="Notifications" title="Notifications">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="badge" id="notifBadge" hidden>0</span>
+        </button>
+        <button type="button" class="icon-btn" id="menuBtn" aria-label="Menu" title="Menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Contenu principal -->
+    <main class="app-main" id="appMain">
+      <!-- ===== ACCUEIL (Feed) ===== -->
+      <section class="view" id="view-home" data-view="home">
+        <div class="composer-card" id="openComposer">
+          <div class="composer-avatar" id="homeAvatar">Ω</div>
+          <div class="composer-placeholder">Quoi de neuf, <span id="homeFirstName">…</span> ?</div>
+        </div>
+
+        <div class="stories-row" id="homeStories">
+          <!-- Statuts récents (aperçu) -->
+        </div>
+
+        <div class="feed" id="feed">
+          <article class="post-card demo">
+            <div class="post-header">
+              <div class="post-avatar">Ω</div>
+              <div>
+                <div class="post-author">OMEGIA</div>
+                <div class="post-meta">Bienvenue · maintenant</div>
+              </div>
+            </div>
+            <div class="post-body">
+              Bienvenue sur <strong>OMEGIA</strong> 🎉<br><br>
+              Ici tu retrouveras bientôt ton fil d’actualité, les publications de tes proches, les réactions, les commentaires…
+              et aussi la messagerie, les appels et les statuts.
+            </div>
+            <div class="post-actions">
+              <button type="button" class="action-btn" disabled>👍 J’aime</button>
+              <button type="button" class="action-btn" disabled>💬 Commenter</button>
+              <button type="button" class="action-btn" disabled>↗ Partager</button>
+            </div>
+          </article>
+
+          <div class="empty-state" id="feedEmpty">
+            <p>Ton fil d’actualité est encore vide.</p>
+            <p class="muted">Quand tes amis publieront, leurs posts apparaîtront ici.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== STATUT ===== -->
+      <section class="view" id="view-status" data-view="status" hidden>
+        <div class="status-header">
+          <h2>Statuts</h2>
+          <p class="muted">Partage un moment qui disparaît après 24 h</p>
+        </div>
+
+        <div class="my-status-card" id="myStatusCard">
+          <div class="status-avatar add">
+            <span>+</span>
+          </div>
+          <div>
+            <div class="status-name">Mon statut</div>
+            <div class="status-meta">Appuie pour ajouter un statut</div>
+          </div>
+        </div>
+
+        <div class="status-section-title">Mises à jour récentes</div>
+        <div class="status-list" id="statusList">
+          <div class="empty-state">
+            <p>Aucun statut pour le moment.</p>
+            <p class="muted">Les statuts de tes contacts apparaîtront ici.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== CRÉER (composer) ===== -->
+      <section class="view" id="view-create" data-view="create" hidden>
+        <div class="create-panel">
+          <h2>Créer une publication</h2>
+          <textarea id="createText" placeholder="Écris quelque chose…" rows="5"></textarea>
+          <div class="create-tools">
+            <button type="button" class="tool-btn" disabled title="Photo / Vidéo bientôt">📷 Photo</button>
+            <button type="button" class="tool-btn" disabled title="Bientôt">😊 Feeling</button>
+            <button type="button" class="tool-btn" disabled title="Bientôt">📍 Lieu</button>
+          </div>
+          <button type="button" class="primary-button" id="publishBtn" disabled>Publier (bientôt disponible)</button>
+          <p class="muted small">La publication réelle arrivera dès que les tables Supabase seront prêtes.</p>
+        </div>
+      </section>
+
+      <!-- ===== MESSAGES ===== -->
+      <section class="view" id="view-messages" data-view="messages" hidden>
+        <div class="messages-header">
+          <h2>Messages</h2>
+          <button type="button" class="icon-btn" id="newChatBtn" aria-label="Nouvelle conversation" title="Nouvelle conversation">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+        <div class="chat-list" id="chatList">
+          <div class="empty-state">
+            <p>Aucune conversation pour le moment.</p>
+            <p class="muted">Tes messages privés et de groupe apparaîtront ici (texte, photos, notes vocales, appels…).</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PROFIL ===== -->
+      <section class="view" id="view-profile" data-view="profile" hidden>
+        <div class="profile-cover"></div>
+        <div class="profile-main">
+          <div class="profile-avatar" id="profileAvatar">Ω</div>
+          <h1 class="profile-name" id="profileName">…</h1>
+          <p class="profile-bio" id="profileBio">Ajoute une bio pour te présenter</p>
+          <div class="profile-meta" id="profileMeta">
+            <span id="profileLocation">📍 Lieu non renseigné</span>
+          </div>
+          <div class="profile-actions">
+            <button type="button" class="primary-button small" id="editProfileBtn">Modifier le profil</button>
+            <button type="button" class="create-button small" id="bioToggle">Activer l’empreinte ou le visage</button>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <h3>À propos</h3>
+          <div class="about-list">
+            <div class="about-item"><span class="label">E-mail</span><span id="profileEmail">—</span></div>
+            <div class="about-item"><span class="label">Membre depuis</span><span id="profileSince">—</span></div>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <h3>Paramètres</h3>
+          <div class="settings-list">
+            <button type="button" class="settings-item" data-setting="privacy">Confidentialité et sécurité</button>
+            <button type="button" class="settings-item" data-setting="notifications">Notifications</button>
+            <button type="button" class="settings-item" data-setting="account">Compte</button>
+            <button type="button" class="settings-item" data-setting="help">Aide et support</button>
+            <button type="button" class="settings-item danger" id="logoutBtn">Se déconnecter</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom navigation -->
+    <nav class="bottom-nav" aria-label="Navigation principale">
+      <button type="button" class="nav-item active" data-nav="home" aria-label="Accueil">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z"/></svg>
+        <span>Accueil</span>
+      </button>
+      <button type="button" class="nav-item" data-nav="status" aria-label="Statut">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/></svg>
+        <span>Statut</span>
+      </button>
+      <button type="button" class="nav-item create" data-nav="create" aria-label="Créer">
+        <div class="create-circle">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+        <span>Créer</span>
+      </button>
+      <button type="button" class="nav-item" data-nav="messages" aria-label="Messages">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>Messages</span>
+        <span class="badge nav-badge" id="msgBadge" hidden>0</span>
+      </button>
+      <button type="button" class="nav-item" data-nav="profile" aria-label="Profil">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        <span>Profil</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Dialog inscription (inchangé) -->
   <dialog id="signupDialog" aria-labelledby="signupTitle">
     <div class="dialog-head">
       <div>
@@ -79,11 +264,30 @@
     </form>
   </dialog>
 
-  <footer class="footer">
+  <!-- Menu latéral simple -->
+  <div id="sideMenu" class="side-menu" hidden>
+    <div class="side-menu-backdrop" id="sideMenuClose"></div>
+    <div class="side-menu-panel">
+      <div class="side-menu-header">
+        <span class="header-logo">Ω</span>
+        <strong>OMEGIA</strong>
+      </div>
+      <button type="button" class="side-item" data-goto="profile">Mon profil</button>
+      <button type="button" class="side-item" data-goto="messages">Messages</button>
+      <button type="button" class="side-item" data-setting="notifications">Notifications</button>
+      <button type="button" class="side-item" data-setting="privacy">Confidentialité</button>
+      <button type="button" class="side-item" data-setting="help">Aide</button>
+      <hr>
+      <button type="button" class="side-item danger" id="sideLogout">Se déconnecter</button>
+    </div>
+  </div>
+
+  <footer class="footer" id="landingFooter">
     <span>Ω OMEGIA · Un seul espace. Des possibilités infinies.</span>
     <span>© <span id="year"></span> OMEGIA</span>
     <button class="link-button" id="installBtn" type="button" hidden>Installer l’application</button>
   </footer>
+
   <script src="app.js" defer></script>
 </body>
 </html>
