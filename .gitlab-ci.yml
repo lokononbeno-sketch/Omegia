@@ -2,7 +2,7 @@ create-pages:
   stage: deploy
   script:
     - mkdir -p public
-    - cp index.html app.js styles.css manifest.webmanifest sw.js public/
+    - cp index.html app.js social.js styles.css manifest.webmanifest sw.js public/
     - if [ -d assets ]; then cp -r assets public/assets; fi
   pages: true
   artifacts:
