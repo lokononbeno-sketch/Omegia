@@ -1,11 +1,10 @@
-// OMEGIA — Authentification Supabase + Espace membre (shell Facebook + WhatsApp)
+// OMEGIA — Auth Supabase + Espace membre (Facebook + WhatsApp hybrid)
 const $ = (id) => document.getElementById(id);
 const SUPABASE_URL = "https://nyiievcbciqxvxmerwdm.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_4ZW9RA9gktscWSW2tuEttw_yRNdnduw";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_AGE = 13;
 
-// Read the link information now: Supabase removes it from the URL once loaded.
 const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
 const startsInRecovery = hashParams.get("type") === "recovery";
 const linkHadError = hashParams.has("error");
@@ -52,7 +51,6 @@ function friendlyError(error) {
 
 let currentUser = null;
 
-// États possibles : guest | recovery | locked | member
 function render(state) {
   const landing = $("landing");
   const footer = $("landingFooter");
@@ -78,7 +76,6 @@ function render(state) {
   }
 }
 
-// ---------- Navigation entre vues ----------
 function showView(name) {
   document.querySelectorAll(".view").forEach((v) => {
     v.hidden = v.dataset.view !== name;
@@ -86,7 +83,6 @@ function showView(name) {
   document.querySelectorAll(".nav-item").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.nav === name);
   });
-  // Scroll en haut à chaque changement de vue
   const main = $("appMain");
   if (main) main.scrollTop = 0;
 }
@@ -95,16 +91,19 @@ document.querySelectorAll("[data-nav]").forEach((btn) => {
   btn.addEventListener("click", () => showView(btn.dataset.nav));
 });
 
-// Composer → vue Créer
+// Composer & stories
 $("openComposer")?.addEventListener("click", () => showView("create"));
+$("composerPhoto")?.addEventListener("click", () => {
+  alert("Photo / Vidéo — bientôt disponible.");
+});
+$("createStoryBtn")?.addEventListener("click", () => {
+  alert("Créer une story — bientôt disponible.\nTu pourras partager une photo, une vidéo ou un texte qui disparaît après 24 h.");
+});
 $("myStatusCard")?.addEventListener("click", () => {
-  // Pour l’instant on ouvre aussi la vue créer (statut = future évolution)
-  showView("create");
-  setMessage("formMessage", ""); // no-op, just placeholder
-  alert("Publication de statut : bientôt disponible.\nTu pourras partager texte, photo ou vidéo qui disparaît après 24 h.");
+  alert("Publication de statut — bientôt disponible.");
 });
 
-// ---------- Profil / données utilisateur ----------
+// ---------- Profil / données ----------
 function getDisplayName(user) {
   if (!user) return "Membre";
   const meta = user.user_metadata || {};
@@ -126,14 +125,15 @@ function populateMemberUI() {
   const name = getDisplayName(currentUser);
   const first = (currentUser.user_metadata?.first_name) || name.split(" ")[0];
   const initials = getInitials(currentUser);
+  const meta = currentUser.user_metadata || {};
 
-  if ($("homeFirstName")) $("homeFirstName").textContent = first;
   if ($("homeAvatar")) $("homeAvatar").textContent = initials;
   if ($("profileName")) $("profileName").textContent = name;
   if ($("profileAvatar")) $("profileAvatar").textContent = initials;
+  if ($("sideName")) $("sideName").textContent = name;
+  if ($("sideAvatar")) $("sideAvatar").textContent = initials;
   if ($("profileEmail")) $("profileEmail").textContent = currentUser.email || "—";
 
-  // Date d’inscription approximative
   if ($("profileSince") && currentUser.created_at) {
     try {
       const d = new Date(currentUser.created_at);
@@ -143,56 +143,88 @@ function populateMemberUI() {
     }
   }
 
-  // Bio / lieu (placeholders pour l’instant)
-  const meta = currentUser.user_metadata || {};
-  if ($("profileBio")) {
-    $("profileBio").textContent = meta.bio || "Ajoute une bio pour te présenter";
-  }
-  if ($("profileLocation")) {
-    $("profileLocation").textContent = meta.location ? "📍 " + meta.location : "📍 Lieu non renseigné";
-  }
+  if ($("profileBio")) $("profileBio").textContent = meta.bio || "Ajoute une bio pour te présenter";
+  if ($("profileLocation")) $("profileLocation").textContent = meta.location ? "📍 " + meta.location : "📍 Lieu non renseigné";
+  if ($("profileWork")) $("profileWork").textContent = meta.work ? "💼 " + meta.work : "💼 Travail non renseigné";
+  if ($("profileSchool")) $("profileSchool").textContent = meta.school ? "🎓 " + meta.school : "🎓 Études non renseignées";
+  if ($("profileStats")) $("profileStats").textContent = "0 follower · 0 suivi(e)s";
 }
 
-// Boutons paramètres (placeholders)
+// Paramètres / placeholders
+const settingMessages = {
+  privacy: "Confidentialité et sécurité — bientôt configurable",
+  notifications: "Notifications — bientôt configurable",
+  account: "Paramètres du compte — bientôt disponible",
+  help: "Aide et support — contacte l’équipe OMEGIA",
+  saved: "Enregistrements — bientôt disponible",
+  memories: "Souvenirs — bientôt disponible",
+  groups: "Groupes — bientôt disponible",
+  pages: "Pages — bientôt disponible",
+  events: "Événements — bientôt disponible",
+  marketplace: "Marketplace — bientôt disponible",
+  reels: "Reels — bientôt disponible",
+  feeds: "Fils — bientôt disponible",
+  games: "Jeux — bientôt disponible",
+  ads: "Espace Pubs — bientôt disponible",
+  avatars: "Avatars — bientôt disponible",
+  assistance: "Assistance — bientôt disponible"
+};
+
 document.querySelectorAll("[data-setting]").forEach((btn) => {
   btn.addEventListener("click", () => {
-    const map = {
-      privacy: "Confidentialité et sécurité — bientôt configurable",
-      notifications: "Notifications — bientôt configurable",
-      account: "Paramètres du compte — bientôt disponible",
-      help: "Aide et support — contacte l’équipe OMEGIA"
-    };
-    alert(map[btn.dataset.setting] || "Bientôt disponible");
+    alert(settingMessages[btn.dataset.setting] || "Bientôt disponible");
+    $("sideMenu").hidden = true;
   });
 });
 
 $("editProfileBtn")?.addEventListener("click", () => {
-  alert("Modification du profil (photo, bio, lieu…) arrivera bientôt.\nPour l’instant les infos viennent de ton compte Supabase.");
+  alert("Modification du profil (photo, bio, lieu, travail, études…) arrivera bientôt.");
 });
-
+$("editCover")?.addEventListener("click", () => alert("Photo de couverture — bientôt disponible."));
+$("editAvatar")?.addEventListener("click", () => alert("Photo de profil — bientôt disponible."));
+$("editAbout")?.addEventListener("click", () => alert("Modifier les informations — bientôt disponible."));
+$("profileMoreBtn")?.addEventListener("click", () => alert("Plus d’options du profil — bientôt."));
 $("newChatBtn")?.addEventListener("click", () => {
-  alert("Nouvelle conversation — la messagerie complète (texte, photos, notes vocales, appels) arrive bientôt.");
+  alert("Nouvelle conversation — messagerie complète bientôt.");
 });
-
-$("searchBtn")?.addEventListener("click", () => {
-  alert("Recherche de personnes, publications et conversations — bientôt disponible.");
-});
-
-$("notifBtn")?.addEventListener("click", () => {
-  alert("Centre de notifications (messages, invitations, mentions…) — bientôt disponible.");
-});
+$("searchBtn")?.addEventListener("click", () => alert("Recherche — bientôt disponible."));
+$("notifBtn")?.addEventListener("click", () => alert("Centre de notifications — bientôt disponible."));
+$("friendsSearch")?.addEventListener("click", () => alert("Rechercher des amis — bientôt disponible."));
+$("seeAllInvites")?.addEventListener("click", () => alert("Toutes les invitations — bientôt."));
 
 // Menu latéral
-$("menuBtn")?.addEventListener("click", () => {
-  $("sideMenu").hidden = false;
-});
-$("sideMenuClose")?.addEventListener("click", () => {
+$("menuBtn")?.addEventListener("click", () => { $("sideMenu").hidden = false; });
+$("sideMenuClose")?.addEventListener("click", () => { $("sideMenu").hidden = true; });
+$("sideUser")?.addEventListener("click", () => {
   $("sideMenu").hidden = true;
+  showView("profile");
 });
 document.querySelectorAll("[data-goto]").forEach((btn) => {
   btn.addEventListener("click", () => {
     $("sideMenu").hidden = true;
     showView(btn.dataset.goto);
+  });
+});
+$("sideSeeMore")?.addEventListener("click", () => {
+  const more = $("sideMore");
+  const open = !more.hidden;
+  more.hidden = open;
+  $("sideSeeMore").textContent = open ? "Voir plus" : "Voir moins";
+});
+
+// Chips amis
+document.querySelectorAll("[data-friends-tab]").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    document.querySelectorAll("[data-friends-tab]").forEach((c) => c.classList.remove("active"));
+    chip.classList.add("active");
+  });
+});
+
+// Profil tabs
+document.querySelectorAll("[data-ptab]").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll("[data-ptab]").forEach((t) => t.classList.remove("active"));
+    tab.classList.add("active");
   });
 });
 
@@ -209,7 +241,7 @@ function readBio() {
   try { return JSON.parse(localStorage.getItem(BIO_KEY) || "null"); } catch { return null; }
 }
 function writeBio(value) {
-  try { if (value) localStorage.setItem(BIO_KEY, JSON.stringify(value)); else localStorage.removeItem(BIO_KEY); } catch { /* storage unavailable */ }
+  try { if (value) localStorage.setItem(BIO_KEY, JSON.stringify(value)); else localStorage.removeItem(BIO_KEY); } catch {}
 }
 async function biometricSupported() {
   try {
@@ -229,7 +261,6 @@ async function refreshBioButton() {
   button.hidden = false;
   button.dataset.enabled = String(enabled);
   button.textContent = enabled ? "Désactiver l'empreinte ou le visage" : "Activer l'empreinte ou le visage";
-  button.className = enabled ? "link-button" : "create-button small";
 }
 async function enableBiometric() {
   const credential = await navigator.credentials.create({
@@ -390,7 +421,7 @@ $("signupForm").addEventListener("submit", async (event) => {
   }
 });
 
-// ---------- Récupération mot de passe ----------
+// ---------- Récupération ----------
 $("recoveryForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const password = $("newPassword").value;
@@ -436,7 +467,7 @@ $("logoutBtn")?.addEventListener("click", signOut);
 $("lockLogout")?.addEventListener("click", signOut);
 $("sideLogout")?.addEventListener("click", signOut);
 
-// ---------- Biométrie boutons ----------
+// Biométrie
 $("bioToggle")?.addEventListener("click", async () => {
   const enabled = $("bioToggle").dataset.enabled === "true";
   try {
@@ -462,7 +493,7 @@ $("unlockBtn").addEventListener("click", async () => {
   }
 });
 
-// ---------- Setup page ----------
+// Setup
 $("year").textContent = new Date().getFullYear();
 
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
@@ -488,7 +519,6 @@ if (linkHadError) {
   setMessage("formMessage", "Ce lien est invalide ou a expiré. Demandez un nouveau lien depuis « Mot de passe oublié ? ».", true);
 }
 
-// Restauration de session
 supabaseReady.then(async (client) => {
   client.auth.onAuthStateChange((event) => {
     if (event === "PASSWORD_RECOVERY") render("recovery");
