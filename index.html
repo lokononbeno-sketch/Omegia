@@ -373,6 +373,144 @@
         </div>
       </section>
 
+      <!-- ===== PARAMÈTRES ET CONFIDENTIALITÉ ===== -->
+      <section class="view" id="view-settings" data-view="settings" hidden>
+        <div class="settings-page-header">
+          <button type="button" class="icon-btn" id="settingsBack" aria-label="Retour">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <h2>Paramètres et confidentialité</h2>
+        </div>
+
+        <div class="settings-search-wrap">
+          <input type="search" id="settingsSearch" placeholder="Rechercher dans les paramètres" autocomplete="off">
+        </div>
+
+        <!-- Votre compte -->
+        <div class="set-block">
+          <div class="set-block-title">Votre compte</div>
+          <button type="button" class="set-row" data-open-panel="account">
+            <span class="set-ico">👤</span>
+            <div class="set-text">
+              <div class="set-label">Espace Comptes</div>
+              <div class="set-desc">Mot de passe, sécurité, informations personnelles, vérification</div>
+            </div>
+            <span class="set-chev">›</span>
+          </button>
+        </div>
+
+        <!-- Outils confidentialité -->
+        <div class="set-block">
+          <div class="set-block-title">Outils et ressources</div>
+          <p class="set-block-sub">Contrôlez et gérez votre confidentialité.</p>
+          <button type="button" class="set-row" data-setting-item="privacy-assist"><span class="set-ico">🔒</span><div class="set-text"><div class="set-label">Assistance confidentialité</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="audience"><span class="set-ico">⚙️</span><div class="set-text"><div class="set-label">Paramètres d’audience par défaut</div></div><span class="set-chev">›</span></button>
+        </div>
+
+        <!-- Préférences -->
+        <div class="set-block">
+          <div class="set-block-title">Préférences</div>
+          <p class="set-block-sub">Personnalisez votre expérience sur OMEGIA.</p>
+          <button type="button" class="set-row" data-setting-item="notifications"><span class="set-ico">🔔</span><div class="set-text"><div class="set-label">Notifications</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="accessibility"><span class="set-ico">♿</span><div class="set-text"><div class="set-label">Accessibilité</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="language"><span class="set-ico">🌐</span><div class="set-text"><div class="set-label">Langue et région</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="media"><span class="set-ico">🎬</span><div class="set-text"><div class="set-label">Contenu multimédia</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="time"><span class="set-ico">🕐</span><div class="set-text"><div class="set-label">Gestion du temps</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" id="toggleDarkMode"><span class="set-ico">🌙</span><div class="set-text"><div class="set-label">Mode sombre</div></div><span class="set-chev" id="darkModeState">Off</span></button>
+        </div>
+
+        <!-- Audience et visibilité -->
+        <div class="set-block">
+          <div class="set-block-title">Audience et visibilité</div>
+          <p class="set-block-sub">Choisissez qui voit ce que vous partagez.</p>
+          <button type="button" class="set-row" data-setting-item="profile-lock"><span class="set-ico">🔐</span><div class="set-text"><div class="set-label">Verrouillage du profil</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="profile-info"><span class="set-ico">👤</span><div class="set-text"><div class="set-label">Informations du profil</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="how-find"><span class="set-ico">🔎</span><div class="set-text"><div class="set-label">Comment les autres peuvent vous trouver et vous contacter</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="posts-vis"><span class="set-ico">📰</span><div class="set-text"><div class="set-label">Publications</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="stories-vis"><span class="set-ico">➕</span><div class="set-text"><div class="set-label">Stories / Statuts</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="followers"><span class="set-ico">👥</span><div class="set-text"><div class="set-label">Followers et contenu public</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="tagging"><span class="set-ico">🏷️</span><div class="set-text"><div class="set-label">Profil et identification</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="blocking"><span class="set-ico">🚫</span><div class="set-text"><div class="set-label">Blocage</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="online-status"><span class="set-ico">🟢</span><div class="set-text"><div class="set-label">Statut En ligne</div></div><span class="set-chev">›</span></button>
+        </div>
+
+        <!-- Votre activité -->
+        <div class="set-block">
+          <div class="set-block-title">Votre activité</div>
+          <button type="button" class="set-row" data-setting-item="activity"><span class="set-ico">📋</span><div class="set-text"><div class="set-label">Historique d’activité</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="device-perms"><span class="set-ico">📱</span><div class="set-text"><div class="set-label">Autorisations de l’appareil</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="link-history"><span class="set-ico">🔗</span><div class="set-text"><div class="set-label">Historique des liens</div></div><span class="set-chev">›</span></button>
+        </div>
+
+        <!-- Légal -->
+        <div class="set-block">
+          <div class="set-block-title">Standards et mentions légales</div>
+          <button type="button" class="set-row" data-setting-item="terms"><span class="set-ico">📖</span><div class="set-text"><div class="set-label">Conditions de service</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="privacy-policy"><span class="set-ico">🔒</span><div class="set-text"><div class="set-label">Politique de confidentialité</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="cookies"><span class="set-ico">🍪</span><div class="set-text"><div class="set-label">Politique d’utilisation des cookies</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="community"><span class="set-ico">🤝</span><div class="set-text"><div class="set-label">Standards de la communauté</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" data-setting-item="about"><span class="set-ico">Ω</span><div class="set-text"><div class="set-label">À propos d’OMEGIA</div></div><span class="set-chev">›</span></button>
+        </div>
+
+        <button type="button" class="set-row danger-row" id="settingsLogout">
+          <span class="set-ico">🚪</span>
+          <div class="set-text"><div class="set-label">Se déconnecter</div></div>
+        </button>
+      </section>
+
+      <!-- ===== ESPACE COMPTES (infos personnelles) ===== -->
+      <section class="view" id="view-account" data-view="account" hidden>
+        <div class="settings-page-header">
+          <button type="button" class="icon-btn" id="accountBack" aria-label="Retour">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <h2>Espace Comptes</h2>
+        </div>
+
+        <div class="set-block">
+          <div class="set-block-title">Informations personnelles</div>
+          <p class="set-block-sub">Ces infos viennent de ton compte. La sauvegarde complète arrivera avec Supabase.</p>
+
+          <label class="acc-field">
+            <span>Prénom</span>
+            <input type="text" id="accFirstName" maxlength="50" placeholder="Prénom">
+          </label>
+          <label class="acc-field">
+            <span>Nom</span>
+            <input type="text" id="accLastName" maxlength="50" placeholder="Nom">
+          </label>
+          <label class="acc-field">
+            <span>Adresse e-mail</span>
+            <input type="email" id="accEmail" placeholder="e-mail" readonly>
+          </label>
+          <label class="acc-field">
+            <span>Date de naissance</span>
+            <input type="date" id="accBirthdate">
+          </label>
+          <label class="acc-field">
+            <span>Numéro de téléphone</span>
+            <input type="tel" id="accPhone" placeholder="Ex. +229 …" maxlength="20">
+          </label>
+          <label class="acc-field">
+            <span>Bio</span>
+            <textarea id="accBio" rows="3" maxlength="200" placeholder="Présente-toi en quelques mots"></textarea>
+          </label>
+          <label class="acc-field">
+            <span>Lieu</span>
+            <input type="text" id="accLocation" maxlength="80" placeholder="Ville, pays">
+          </label>
+
+          <button type="button" class="primary-button" id="accSaveBtn">Enregistrer les modifications</button>
+          <p class="form-message" id="accMessage" role="status"></p>
+        </div>
+
+        <div class="set-block">
+          <div class="set-block-title">Sécurité</div>
+          <button type="button" class="set-row" data-setting-item="password"><span class="set-ico">🔑</span><div class="set-text"><div class="set-label">Mot de passe et sécurité</div></div><span class="set-chev">›</span></button>
+          <button type="button" class="set-row" id="accBioToggle"><span class="set-ico">指纹</span><div class="set-text"><div class="set-label">Empreinte / reconnaissance faciale</div></div><span class="set-chev">›</span></button>
+        </div>
+      </section>
+
       <!-- ===== CRÉER (composer plein) ===== -->
       <section class="view" id="view-create" data-view="create" hidden>
         <div class="create-panel">
@@ -520,7 +658,7 @@
       <button type="button" class="side-item" data-setting="help">
         <span class="si-icon">❓</span> Aide et assistance
       </button>
-      <button type="button" class="side-item" data-setting="privacy">
+      <button type="button" class="side-item" data-goto="settings">
         <span class="si-icon">⚙️</span> Paramètres et confidentialité
       </button>
       <button type="button" class="side-item danger" id="sideLogout">
