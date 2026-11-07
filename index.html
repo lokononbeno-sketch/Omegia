@@ -257,11 +257,15 @@
         <!-- Panneau emojis simple -->
         <div class="emoji-panel" id="emojiPanel" hidden>
           <div class="emoji-tabs">
-            <button type="button" class="etab active">😊</button>
-            <button type="button" class="etab">GIF</button>
-            <button type="button" class="etab">🎨</button>
+            <button type="button" class="etab active" data-sticker-tab="emoji">😊 Emojis</button>
+            <button type="button" class="etab" data-sticker-tab="stickers">🎭 Stickers</button>
           </div>
           <div class="emoji-grid" id="emojiGrid"></div>
+          <div class="emoji-grid sticker-grid" id="stickerGrid" hidden></div>
+          <div class="sticker-tools" id="stickerTools" hidden>
+            <button type="button" id="importStickerPack">＋ Importer mon dossier ZIP</button>
+            <span id="stickerImportStatus">Tes stickers personnels apparaîtront ici.</span>
+          </div>
         </div>
       </section>
 
