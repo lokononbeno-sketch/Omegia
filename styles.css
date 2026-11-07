@@ -430,6 +430,70 @@ dialog::backdrop { background: rgba(244, 242, 250, .85); }
 }
 .emoji-grid button:hover { background: var(--lavender); }
 
+/* ===== PARAMÈTRES ===== */
+.settings-page-header {
+  display: flex; align-items: center; gap: 8px;
+  margin: -10px -12px 12px; padding: 8px 8px 10px;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 5;
+}
+.settings-page-header h2 { margin: 0; font-size: 18px; font-weight: 700; }
+.settings-search-wrap { margin-bottom: 14px; }
+.settings-search-wrap input {
+  height: 42px; border-radius: 99px; background: var(--lavender);
+  border: 0; margin: 0; font-size: 15px;
+}
+.set-block {
+  background: var(--surface); border-radius: 14px; padding: 8px 0;
+  margin-bottom: 14px; box-shadow: 0 1px 3px #00000010;
+}
+.set-block-title {
+  font-size: 15px; font-weight: 700; padding: 10px 16px 4px;
+}
+.set-block-sub {
+  margin: 0; padding: 0 16px 8px; font-size: 13px; color: var(--muted); line-height: 1.4;
+}
+.set-row {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  border: 0; background: none; text-align: left; padding: 12px 16px; color: inherit;
+}
+.set-row:hover { background: var(--lavender); }
+.set-row.danger-row .set-label { color: #c0392b; font-weight: 600; }
+.set-ico { width: 28px; text-align: center; font-size: 18px; flex: none; }
+.set-text { flex: 1; min-width: 0; }
+.set-label { font-size: 15px; }
+.set-desc { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+.set-chev { color: var(--muted); font-size: 18px; flex: none; }
+
+.acc-field {
+  display: block; padding: 8px 16px 4px;
+}
+.acc-field span {
+  display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; font-weight: 600;
+}
+.acc-field input, .acc-field textarea {
+  margin-bottom: 4px; height: 44px; font-size: 15px;
+}
+.acc-field textarea { height: auto; min-height: 80px; }
+#accSaveBtn { margin: 12px 16px 8px; width: calc(100% - 32px); }
+#accMessage { margin: 0 16px 12px; }
+
+/* Mode sombre basique */
+body.dark-mode {
+  --page: #121212;
+  --surface: #1e1e1e;
+  --ink: #f0f0f0;
+  --muted: #a0a0a0;
+  --line: #333;
+  --lavender: #2a2540;
+  --page: #0f0f12;
+}
+body.dark-mode .bubble.out { background: #005c4b; color: #e7ffee; }
+body.dark-mode .bubble.in { background: #1f2c34; color: #e9edef; }
+body.dark-mode .chat-view { background: #0b141a; }
+body.dark-mode .composer-input,
+body.dark-mode .settings-search-wrap input { background: #2a2a2a; color: var(--ink); }
+
 /* Profil */
 .profile-cover {
   height: 140px; margin: -10px -12px 0; position: relative;

@@ -180,9 +180,125 @@ const settingMessages = {
 
 document.querySelectorAll("[data-setting]").forEach((btn) => {
   btn.addEventListener("click", () => {
+    if (btn.dataset.setting === "privacy") {
+      $("sideMenu").hidden = true;
+      showView("settings");
+      return;
+    }
     alert(settingMessages[btn.dataset.setting] || "Bientôt disponible");
     $("sideMenu").hidden = true;
   });
+});
+
+// ----- Paramètres -----
+$("settingsBack")?.addEventListener("click", () => showView("profile"));
+$("accountBack")?.addEventListener("click", () => showView("settings"));
+$("settingsLogout")?.addEventListener("click", signOut);
+
+document.querySelectorAll("[data-open-panel]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (btn.dataset.openPanel === "account") {
+      fillAccountForm();
+      showView("account");
+    }
+  });
+});
+
+document.querySelectorAll("[data-setting-item]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const key = btn.dataset.settingItem;
+    const labels = {
+      "privacy-assist": "Assistance confidentialité",
+      audience: "Paramètres d’audience par défaut",
+      notifications: "Notifications",
+      accessibility: "Accessibilité",
+      language: "Langue et région",
+      media: "Contenu multimédia",
+      time: "Gestion du temps",
+      "profile-lock": "Verrouillage du profil",
+      "profile-info": "Informations du profil",
+      "how-find": "Comment les autres peuvent vous trouver",
+      "posts-vis": "Visibilité des publications",
+      "stories-vis": "Visibilité des stories / statuts",
+      followers: "Followers et contenu public",
+      tagging: "Profil et identification",
+      blocking: "Liste des comptes bloqués",
+      "online-status": "Qui peut voir que vous êtes en ligne",
+      activity: "Historique d’activité",
+      "device-perms": "Autorisations de l’appareil",
+      "link-history": "Historique des liens",
+      terms: "Conditions de service OMEGIA",
+      "privacy-policy": "Politique de confidentialité OMEGIA",
+      cookies: "Politique cookies",
+      community: "Standards de la communauté",
+      about: "OMEGIA — One app. Infinite connections.\nCréé par Beno Lokonon.",
+      password: "Changement de mot de passe — utilise « Mot de passe oublié » pour l’instant, ou Supabase Auth plus tard."
+    };
+    alert((labels[key] || key) + "\n\nRéglage détaillé bientôt disponible.");
+  });
+});
+
+function fillAccountForm() {
+  if (!currentUser) return;
+  const meta = currentUser.user_metadata || {};
+  if ($("accFirstName")) $("accFirstName").value = meta.first_name || "";
+  if ($("accLastName")) $("accLastName").value = meta.last_name || "";
+  if ($("accEmail")) $("accEmail").value = currentUser.email || "";
+  if ($("accBirthdate")) $("accBirthdate").value = meta.birthdate || "";
+  if ($("accPhone")) $("accPhone").value = meta.phone || "";
+  if ($("accBio")) $("accBio").value = meta.bio || "";
+  if ($("accLocation")) $("accLocation").value = meta.location || "";
+}
+
+$("accSaveBtn")?.addEventListener("click", async () => {
+  const btn = $("accSaveBtn");
+  const first = $("accFirstName")?.value.trim() || "";
+  const last = $("accLastName")?.value.trim() || "";
+  if (!first || !last) {
+    setMessage("accMessage", "Prénom et nom sont obligatoires.", true);
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = "Enregistrement…";
+  setMessage("accMessage", "Mise à jour du profil…");
+  try {
+    const client = await supabaseReady;
+    const { data, error } = await client.auth.updateUser({
+      data: {
+        first_name: first,
+        last_name: last,
+        birthdate: $("accBirthdate")?.value || null,
+        phone: $("accPhone")?.value.trim() || null,
+        bio: $("accBio")?.value.trim() || null,
+        location: $("accLocation")?.value.trim() || null
+      }
+    });
+    if (error) throw error;
+    currentUser = data.user;
+    populateMemberUI();
+    setMessage("accMessage", "Profil mis à jour.");
+  } catch (error) {
+    setMessage("accMessage", friendlyError(error), true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Enregistrer les modifications";
+  }
+});
+
+// Mode sombre
+const DARK_KEY = "omegia.dark";
+function applyDarkMode(on) {
+  document.body.classList.toggle("dark-mode", on);
+  if ($("darkModeState")) $("darkModeState").textContent = on ? "On" : "Off";
+  try { localStorage.setItem(DARK_KEY, on ? "1" : "0"); } catch {}
+}
+try { if (localStorage.getItem(DARK_KEY) === "1") applyDarkMode(true); } catch {}
+$("toggleDarkMode")?.addEventListener("click", () => {
+  applyDarkMode(!document.body.classList.contains("dark-mode"));
+});
+
+$("accBioToggle")?.addEventListener("click", () => {
+  $("bioToggle")?.click();
 });
 
 $("editProfileBtn")?.addEventListener("click", () => {
