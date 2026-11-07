@@ -83,6 +83,13 @@ function showView(name) {
   document.querySelectorAll(".nav-item").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.nav === name);
   });
+  // Quand on quitte la conversation, on réaffiche header + nav
+  if (name !== "chat") {
+    document.querySelector(".bottom-nav")?.classList.remove("hidden-for-chat");
+    document.querySelector(".app-header")?.classList.remove("hidden-for-chat");
+    const panel = $("emojiPanel");
+    if (panel) panel.hidden = true;
+  }
   const main = $("appMain");
   if (main) main.scrollTop = 0;
 }
