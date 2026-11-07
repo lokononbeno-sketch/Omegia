@@ -45,14 +45,90 @@ function friendlyError(error) {
   if (/password should be|weak password/i.test(msg)) return "Mot de passe trop faible. Utilisez au moins 8 caractères variés.";
   if (/session missing/i.test(msg)) return "Le lien de récupération a expiré. Demandez un nouveau lien depuis « Mot de passe oublié ? ».";
   if (/failed to fetch|network/i.test(msg)) return "Connexion impossible. Vérifiez votre connexion Internet.";
+  if (error && (error.name === "NotAllowedError" || error.name === "AbortError")) return "Vérification annulée ou refusée par l'appareil.";
   return msg || "Une erreur est survenue. Réessayez.";
 }
 
-// One screen state at a time: "guest" (login), "recovery" (new password) or "member" (signed in).
+// The signed-in Supabase user (null when nobody is signed in).
+let currentUser = null;
+
+// One screen state at a time: "guest" (login), "recovery" (new password),
+// "locked" (signed in, waiting for fingerprint/face) or "member" (signed in).
 function render(state) {
   $("guestArea").hidden = state !== "guest";
   $("recoveryForm").hidden = state !== "recovery";
-  $("logoutBtn").hidden = state !== "member";
+  $("lockArea").hidden = state !== "locked";
+  $("memberArea").hidden = state !== "member";
+  if (state === "member") refreshBioButton();
+}
+
+// ----- Fingerprint / face unlock -----
+// Uses the device's own biometric check (WebAuthn, platform authenticator). It is an app lock
+// on this device: the real sign-in is still done by Supabase with e-mail and password.
+const BIO_KEY = "omegia.biometric";
+const b64u = {
+  enc: (buffer) => btoa(String.fromCharCode(...new Uint8Array(buffer))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""),
+  dec: (text) => {
+    const base64 = text.replace(/-/g, "+").replace(/_/g, "/");
+    return Uint8Array.from(atob(base64 + "=".repeat((4 - (base64.length % 4)) % 4)), (c) => c.charCodeAt(0));
+  }
+};
+function readBio() {
+  try { return JSON.parse(localStorage.getItem(BIO_KEY) || "null"); } catch { return null; }
+}
+function writeBio(value) {
+  try { if (value) localStorage.setItem(BIO_KEY, JSON.stringify(value)); else localStorage.removeItem(BIO_KEY); } catch { /* storage unavailable */ }
+}
+async function biometricSupported() {
+  try {
+    return Boolean(window.isSecureContext && window.PublicKeyCredential &&
+      await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
+  } catch { return false; }
+}
+function biometricEnabledFor(user) {
+  const bio = readBio();
+  return Boolean(bio && user && bio.userId === user.id);
+}
+async function refreshBioButton() {
+  const button = $("bioToggle");
+  if (!(await biometricSupported())) { button.hidden = true; return; }
+  const enabled = biometricEnabledFor(currentUser);
+  button.hidden = false;
+  button.dataset.enabled = String(enabled);
+  button.textContent = enabled ? "Désactiver l'empreinte ou le visage" : "Activer l'empreinte ou le visage";
+  button.className = enabled ? "link-button" : "create-button";
+}
+async function enableBiometric() {
+  const credential = await navigator.credentials.create({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: "OMEGIA" },
+      user: { id: new TextEncoder().encode(currentUser.id), name: currentUser.email, displayName: currentUser.email },
+      pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged" },
+      attestation: "none",
+      timeout: 60000
+    }
+  });
+  writeBio({ userId: currentUser.id, credentialId: b64u.enc(credential.rawId) });
+}
+async function verifyBiometric() {
+  const bio = readBio();
+  if (!bio) throw new Error("Le déverrouillage biométrique n'est pas activé.");
+  const challenge = crypto.getRandomValues(new Uint8Array(32));
+  const assertion = await navigator.credentials.get({
+    publicKey: {
+      challenge,
+      allowCredentials: [{ type: "public-key", id: b64u.dec(bio.credentialId), transports: ["internal"] }],
+      userVerification: "required",
+      timeout: 60000
+    }
+  });
+  const client = JSON.parse(new TextDecoder().decode(assertion.response.clientDataJSON));
+  const userVerified = (new Uint8Array(assertion.response.authenticatorData)[32] & 0x04) !== 0;
+  if (client.type !== "webauthn.get" || client.challenge !== b64u.enc(challenge) || client.origin !== location.origin || !userVerified) {
+    throw new Error("Vérification biométrique refusée.");
+  }
 }
 
 function ageFrom(dateString) {
@@ -80,8 +156,9 @@ $("loginForm").addEventListener("submit", async (event) => {
   setMessage("formMessage", "Connexion sécurisée à Supabase…");
   try {
     const client = await supabaseReady;
-    const { error } = await client.auth.signInWithPassword({ email, password });
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    currentUser = data.user;
     render("member");
     setMessage("formMessage", "Connexion réussie ! Votre session est active. L'espace membre OMEGIA sera disponible dans une prochaine étape.");
   } catch (error) {
@@ -168,6 +245,7 @@ $("signupForm").addEventListener("submit", async (event) => {
     }
     $("signupForm").reset();
     if (data.session) {
+      currentUser = data.user;
       closeSignup();
       render("member");
       setMessage("formMessage", "Compte créé et connecté ! L'espace membre OMEGIA sera disponible dans une prochaine étape.");
@@ -195,8 +273,9 @@ $("recoveryForm").addEventListener("submit", async (event) => {
   setMessage("formMessage", "Enregistrement du nouveau mot de passe…");
   try {
     const client = await supabaseReady;
-    const { error } = await client.auth.updateUser({ password });
+    const { data, error } = await client.auth.updateUser({ password });
     if (error) throw error;
+    currentUser = data.user;
     history.replaceState(null, "", window.location.pathname + window.location.search);
     $("recoveryForm").reset();
     render("member");
@@ -210,13 +289,44 @@ $("recoveryForm").addEventListener("submit", async (event) => {
 });
 
 // ----- Sign out -----
-$("logoutBtn").addEventListener("click", async () => {
+async function signOut() {
   try {
     const client = await supabaseReady;
     const { error } = await client.auth.signOut();
     if (error) throw error;
+    writeBio(null);
+    currentUser = null;
     render("guest");
     setMessage("formMessage", "Vous êtes déconnecté.");
+  } catch (error) {
+    setMessage("formMessage", friendlyError(error), true);
+  }
+}
+$("logoutBtn").addEventListener("click", signOut);
+$("lockLogout").addEventListener("click", signOut);
+
+// ----- Fingerprint / face buttons -----
+$("bioToggle").addEventListener("click", async () => {
+  const enabled = $("bioToggle").dataset.enabled === "true";
+  try {
+    if (enabled) {
+      writeBio(null);
+      setMessage("formMessage", "Le déverrouillage par empreinte ou visage est désactivé sur cet appareil.");
+    } else {
+      await enableBiometric();
+      setMessage("formMessage", "C'est activé : à la prochaine ouverture, OMEGIA se déverrouillera avec votre empreinte ou votre visage.");
+    }
+  } catch (error) {
+    setMessage("formMessage", friendlyError(error), true);
+  }
+  refreshBioButton();
+});
+
+$("unlockBtn").addEventListener("click", async () => {
+  try {
+    await verifyBiometric();
+    render("member");
+    setMessage("formMessage", "Déverrouillé. Vous êtes connecté à OMEGIA avec " + currentUser.email + ".");
   } catch (error) {
     setMessage("formMessage", friendlyError(error), true);
   }
@@ -253,11 +363,17 @@ if (linkHadError) {
 supabaseReady.then(async (client) => {
   client.auth.onAuthStateChange((event) => {
     if (event === "PASSWORD_RECOVERY") render("recovery");
-    if (event === "SIGNED_OUT") render("guest");
+    if (event === "SIGNED_OUT") { currentUser = null; render("guest"); }
   });
   if (startsInRecovery) return;
   const { data: { session } } = await client.auth.getSession();
   if (session) {
+    currentUser = session.user;
+    if (biometricEnabledFor(currentUser) && await biometricSupported()) {
+      render("locked");
+      return;
+    }
+    if (readBio() && !biometricEnabledFor(currentUser)) writeBio(null);
     render("member");
     setMessage("formMessage", "Vous êtes déjà connecté à OMEGIA avec " + session.user.email + ". L'espace membre sera disponible dans une prochaine étape.");
   }

@@ -39,8 +39,19 @@
         <button class="primary-button" type="submit" id="recoveryBtn">Enregistrer le mot de passe</button>
       </form>
 
+      <div id="lockArea" hidden>
+        <h3 class="pane-title">OMEGIA est verrouillé</h3>
+        <p class="pane-text">Utilisez l'empreinte digitale ou la reconnaissance faciale de cet appareil pour continuer.</p>
+        <button class="primary-button" type="button" id="unlockBtn">Déverrouiller</button>
+        <button class="link-button" type="button" id="lockLogout">Se déconnecter</button>
+      </div>
+
       <p class="form-message" id="formMessage" role="status" aria-live="polite"></p>
-      <button class="link-button" type="button" id="logoutBtn" hidden>Se déconnecter</button>
+
+      <div id="memberArea" hidden>
+        <button class="create-button" type="button" id="bioToggle" hidden>Activer l'empreinte ou le visage</button>
+        <button class="link-button" type="button" id="logoutBtn">Se déconnecter</button>
+      </div>
     </section>
   </main>
 
