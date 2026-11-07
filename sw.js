@@ -1,4 +1,4 @@
-const CACHE = "omegia-shell-v4";
+const CACHE = "omegia-shell-v5";
 const FILES = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./assets/omega.svg"];
 
 self.addEventListener("install", (event) => {
@@ -14,7 +14,6 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Network first, so a new deployment is visible immediately; the cache is only the offline fallback.
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
