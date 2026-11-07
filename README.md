@@ -65,3 +65,8 @@ Never commit API keys, passwords, private tokens, service-role keys or real user
 ## Ownership
 
 Created for the OMEGIA project by Beno Lokonon.
+
+
+## Supabase social features setup
+
+The initial social database schema is in `supabase/schema.sql`. Run it in the Supabase SQL Editor while signed in as the project owner. It creates profiles, friend requests, posts, reactions, comments, 24-hour stories, conversations and messages, with Row Level Security enabled. The application UI is not considered live until the client-side flows are connected and tested against these tables. Create and secure the `omegia-media` Storage bucket separately before enabling uploads.
