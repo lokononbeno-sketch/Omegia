@@ -1,0 +1,43 @@
+import fs from "node:fs";
+import path from "node:path";
+import sharp from "sharp";
+import { execFileSync } from "node:child_process";
+
+const root = process.cwd();
+const webDir = path.join(root, "www");
+fs.rmSync(webDir, { recursive: true, force: true });
+fs.mkdirSync(webDir, { recursive: true });
+
+for (const file of ["index.html", "app.js", "social.js", "styles.css", "manifest.webmanifest", "sw.js"]) {
+  fs.copyFileSync(path.join(root, file), path.join(webDir, file));
+}
+if (fs.existsSync(path.join(root, "assets"))) {
+  fs.cpSync(path.join(root, "assets"), path.join(webDir, "assets"), { recursive: true });
+}
+
+execFileSync("npx", ["cap", "add", "android"], { stdio: "inherit" });
+execFileSync("npx", ["cap", "sync", "android"], { stdio: "inherit" });
+
+const res = path.join(root, "android/app/src/main/res");
+const iconSvg = path.join(root, "assets/omega.svg");
+const legacy = {
+  "mipmap-mdpi": 48,
+  "mipmap-hdpi": 72,
+  "mipmap-xhdpi": 96,
+  "mipmap-xxhdpi": 144,
+  "mipmap-xxxhdpi": 192
+};
+for (const [folder, size] of Object.entries(legacy)) {
+  const dir = path.join(res, folder);
+  fs.mkdirSync(dir, { recursive: true });
+  for (const name of ["ic_launcher.png", "ic_launcher_round.png", "ic_launcher_foreground.png"]) {
+    await sharp(iconSvg).resize(size, size).png().toFile(path.join(dir, name));
+  }
+}
+const anydpi = path.join(res, "mipmap-anydpi-v26");
+if (fs.existsSync(anydpi)) {
+  for (const name of ["ic_launcher.xml", "ic_launcher_round.xml"]) {
+    const file = path.join(anydpi, name);
+    if (fs.existsSync(file)) fs.rmSync(file);
+  }
+}
