@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "OMEGIA — Social & Messaging",
+  "short_name": "OMEGIA",
+  "description": "Un seul espace pour échanger, partager et rester connecté.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f7f6fb",
+  "theme_color": "#7652d6",
+  "icons": [
+    { "src": "assets/omega.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
