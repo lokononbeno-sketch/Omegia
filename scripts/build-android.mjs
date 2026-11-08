@@ -8,7 +8,7 @@ const webDir = path.join(root, "www");
 fs.rmSync(webDir, { recursive: true, force: true });
 fs.mkdirSync(webDir, { recursive: true });
 
-for (const file of ["index.html", "app.js", "social.js", "styles.css", "manifest.webmanifest", "sw.js"]) {
+for (const file of ["index.html", "app.js", "social.js", "styles.css", "manifest.webmanifest", "sw.js", "update.js", "version.json"]) {
   fs.copyFileSync(path.join(root, file), path.join(webDir, file));
 }
 if (fs.existsSync(path.join(root, "assets"))) {
@@ -40,4 +40,12 @@ if (fs.existsSync(anydpi)) {
     const file = path.join(anydpi, name);
     if (fs.existsSync(file)) fs.rmSync(file);
   }
+}
+
+const gradleFile = path.join(root, "android/app/build.gradle");
+if (fs.existsSync(gradleFile)) {
+  let gradle = fs.readFileSync(gradleFile, "utf8");
+  gradle = gradle.replace(/versionCode\\s+1\\b/, "versionCode 2");
+  gradle = gradle.replace(/versionName\\s+"[^"]+"/, 'versionName "1.0.1"');
+  fs.writeFileSync(gradleFile, gradle);
 }

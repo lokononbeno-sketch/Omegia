@@ -17,7 +17,7 @@ pages:
   stage: deploy
   script:
     - mkdir -p public
-    - cp index.html app.js social.js styles.css manifest.webmanifest sw.js public/
+    - cp index.html app.js social.js styles.css manifest.webmanifest sw.js update.js version.json public/
     - if [ -d assets ]; then cp -r assets public/assets; fi
   artifacts:
     paths:
