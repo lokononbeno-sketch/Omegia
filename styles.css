@@ -84,8 +84,9 @@ button { font: inherit; cursor: pointer; }
 .create-button.wide { width: 100%; max-width: 220px; margin: 18px auto 0; }
 .pane-title { margin: 0 0 6px; font-size: 22px; }
 .pane-text { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.5; }
-.form-message { min-height: 18px; margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: #a04b4b; text-align: center; }
+.form-message { min-height: 18px; margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: #a04b4b; text-align: center; font-weight: 600; }
 .form-message[data-state="success"] { color: #1f7a64; }
+.form-message[data-state="error"] { color: #b42318; background: #fdecea; border-radius: 8px; padding: 8px 10px; }
 .link-button {
   display: block; margin: 12px auto 0; border: 0; background: none; padding: 4px 8px;
   color: var(--violet-dark); font-size: 13px; font-weight: 700; text-decoration: underline;
