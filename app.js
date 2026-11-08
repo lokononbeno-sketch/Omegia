@@ -3,7 +3,11 @@ const $ = (id) => document.getElementById(id);
 const SUPABASE_URL = "https://nyiievcbciqxvxmerwdm.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_4ZW9RA9gktscWSW2tuEttw_yRNdnduw";
 // URL publique unique utilisée pour les retours d’authentification sur le web et l’APK.
-const OMEGIA_PUBLIC_URL = "https://lokononbeno.gitlab.io/omegia-social/";
+// URL de retour après confirmation e-mail / mot de passe oublié.
+// On préfère l’origine actuelle (Netlify, GitLab Pages, ou WebView de l’APK) pour que le lien marche partout.
+const OMEGIA_PUBLIC_URL = (typeof location !== "undefined" && location.protocol.startsWith("http") && location.hostname !== "localhost")
+  ? (location.origin + (location.pathname.replace(/\/[^/]*$/, "/") || "/"))
+  : "https://omegia.netlify.app/";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_AGE = 13;
 
@@ -944,7 +948,13 @@ $("signupForm").addEventListener("submit", async (event) => {
       render("member");
       setMessage("formMessage", "Compte créé ! Bienvenue sur OMEGIA.");
     } else {
-      setMessage("signupMessage", "Inscription envoyée ! Ouvre ta boîte e-mail (et les indésirables) pour confirmer ton adresse, puis reconnecte-toi.");
+      // Compte créé côté Supabase, mais session absente = confirmation e-mail obligatoire.
+      // Sans SMTP personnalisé, cet e-mail n’arrive souvent PAS aux adresses hors de ton équipe.
+      setMessage(
+        "signupMessage",
+        "Compte enregistré. Supabase doit t’envoyer un e-mail de confirmation. Si tu ne le reçois pas (même dans les indésirables), le serveur e-mail gratuit de Supabase est trop limité : l’admin doit activer un SMTP (Resend, etc.) ou désactiver temporairement « Confirm email » dans Supabase.",
+        false
+      );
       offerResend(email);
     }
   } catch (error) {
