@@ -22,17 +22,17 @@
       <h2 class="sr-only" id="authTitle">Accès à OMEGIA</h2>
 
       <div id="guestArea">
-        <form id="loginForm" novalidate hidden style="display:none">
+        <form id="loginForm" novalidate>
           <input id="email" name="email" type="email" autocomplete="email" placeholder="Adresse e-mail" aria-label="Adresse e-mail" required>
           <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Mot de passe" aria-label="Mot de passe" required>
           <button class="primary-button" type="submit" id="loginBtn">Se connecter</button>
           <a href="#" id="forgotLink" class="forgot">Mot de passe oublié ?</a>
         </form>
         <hr class="divider">
-        <button class="primary-button" type="button" id="bioSignupOpen">Créer mon compte avec l’empreinte ou le visage</button>
-        <p class="pane-text" style="margin-top:12px">Déjà inscrit sur cet appareil ? Rouvrez simplement OMEGIA : l’application se déverrouille avec votre empreinte ou votre visage.</p>
-        <button class="create-button" type="button" id="openSignup" style="display:none">Créer un nouveau compte</button>
-        <button type="button" id="showEmailLogin" style="background:none;border:0;color:#7652d6;text-decoration:underline;padding:10px 0;font:inherit;cursor:pointer">J’ai déjà un compte (e-mail)</button>
+        <button class="create-button" type="button" id="openSignup">Créer un nouveau compte (e-mail)</button>
+        <button class="primary-button" type="button" id="bioSignupOpen" style="margin-top:12px">Créer mon compte avec l’empreinte ou le visage</button>
+        <p class="pane-text" style="margin-top:12px">Astuce : l’inscription par e-mail marche partout. L’empreinte / le visage dépend de ton téléphone et de Chrome.</p>
+        <button type="button" id="showEmailLogin" hidden style="background:none;border:0;color:#7652d6;text-decoration:underline;padding:10px 0;font:inherit;cursor:pointer">J’ai déjà un compte (e-mail)</button>
       </div>
 
       <form id="recoveryForm" hidden novalidate>

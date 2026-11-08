@@ -28,9 +28,19 @@ const supabaseReady = new Promise((resolve, reject) => {
 
 function setMessage(id, message, isError = false) {
   const el = $(id);
-  if (!el) return;
-  el.textContent = message;
+  if (!el) {
+    if (message) console.warn("OMEGIA message [" + id + "]:", message);
+    if (message && isError) {
+      try { alert(message); } catch (_) {}
+    }
+    return;
+  }
+  el.hidden = false;
+  el.style.display = "";
+  el.textContent = message || "";
   el.dataset.state = isError ? "error" : "success";
+  // Remonter le message dans le dialog / formulaire pour qu’il soit visible sur mobile
+  try { el.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (_) {}
 }
 
 function friendlyError(error) {
@@ -43,8 +53,12 @@ function friendlyError(error) {
   if (known[msg]) return known[msg];
   if (/rate limit|too many requests|security purposes/i.test(msg)) return "Trop de tentatives. Patientez quelques instants avant de réessayer.";
   if (/captcha/i.test(msg)) return "L'inscription est momentanément indisponible (vérification de sécurité du serveur). Réessayez plus tard.";
-  if (/anonymous sign-?ins? (are|is) disabled/i.test(msg)) return "L'inscription par empreinte n'est pas encore activée sur le serveur. Utilisez votre adresse e-mail pour l'instant.";
-  if (/signups? (not allowed|(is|are) disabled)/i.test(msg)) return "Les inscriptions sont momentanément fermées.";
+  if (/anonymous sign-?ins? (are|is) disabled/i.test(msg)) return "L'inscription par empreinte n'est pas activée sur le serveur. Utilisez « Créer un nouveau compte (e-mail) ».";
+  if (/signups? (not allowed|(is|are) disabled)/i.test(msg)) return "Les inscriptions sont momentanément fermées. Réessayez plus tard ou contactez l’équipe OMEGIA.";
+  if (/email.*not.*confirm|confirm.*email/i.test(msg)) return "Confirmez d’abord votre e-mail (regardez aussi les indésirables), puis reconnectez-vous.";
+  if (/user already|already registered|already been registered/i.test(msg)) return "Cette adresse e-mail possède déjà un compte. Essayez de vous connecter.";
+  if (/invalid.*email|email.*invalid/i.test(msg)) return "Adresse e-mail invalide. Vérifiez l’orthographe.";
+  if (/Unable to validate|invalid login/i.test(msg)) return "Adresse e-mail ou mot de passe incorrect.";
   if (/different from the old password/i.test(msg)) return "Le nouveau mot de passe doit être différent de l'ancien.";
   if (/password should be|weak password/i.test(msg)) return "Mot de passe trop faible. Utilisez au moins 8 caractères variés.";
   if (/session missing/i.test(msg)) return "Le lien de récupération a expiré. Demandez un nouveau lien depuis « Mot de passe oublié ? ».";
@@ -889,22 +903,26 @@ $("signupForm").addEventListener("submit", async (event) => {
   const firstName = $("firstName").value.trim();
   const lastName = $("lastName").value.trim();
   const birthdate = $("birthdate").value;
-  const email = $("signupEmail").value.trim();
+  const email = $("signupEmail").value.trim().toLowerCase();
   const password = $("signupPassword").value;
   const button = $("signupBtn");
-  const fail = (text) => setMessage("signupMessage", text, true);
+  const fail = (text) => {
+    setMessage("signupMessage", text, true);
+    console.error("OMEGIA inscription:", text);
+  };
 
   if (!firstName || !lastName) { fail("Veuillez saisir votre prénom et votre nom."); return; }
-  const age = birthdate ? ageFrom(birthdate) : null;
+  if (!birthdate) { fail("Veuillez saisir votre date de naissance."); return; }
+  const age = ageFrom(birthdate);
   if (age === null || age < 0 || age > 120) { fail("Veuillez saisir une date de naissance valide."); return; }
   if (age < MIN_AGE) { fail("Vous devez avoir au moins " + MIN_AGE + " ans pour créer un compte."); return; }
-  if (!EMAIL_RE.test(email)) { fail("Veuillez saisir une adresse e-mail valide."); return; }
+  if (!EMAIL_RE.test(email)) { fail("Veuillez saisir une adresse e-mail valide (ex. nom@gmail.com)."); return; }
   if (password.length < 8) { fail("Le mot de passe doit contenir au moins 8 caractères."); return; }
   if (password !== $("signupConfirm").value) { fail("Les deux mots de passe ne correspondent pas."); return; }
 
   button.disabled = true;
   button.textContent = "Création du compte…";
-  setMessage("signupMessage", "Connexion sécurisée à Supabase…");
+  setMessage("signupMessage", "Inscription en cours, patientez…");
   try {
     const client = await supabaseReady;
     const { data, error } = await client.auth.signUp({
@@ -924,11 +942,13 @@ $("signupForm").addEventListener("submit", async (event) => {
       currentUser = data.user;
       closeSignup();
       render("member");
+      setMessage("formMessage", "Compte créé ! Bienvenue sur OMEGIA.");
     } else {
-      setMessage("signupMessage", "Inscription envoyée ! Consultez votre boîte e-mail pour confirmer votre adresse avant de vous connecter.");
+      setMessage("signupMessage", "Inscription envoyée ! Ouvre ta boîte e-mail (et les indésirables) pour confirmer ton adresse, puis reconnecte-toi.");
       offerResend(email);
     }
   } catch (error) {
+    console.error("OMEGIA signUp error:", error);
     fail(friendlyError(error));
   } finally {
     button.disabled = false;
@@ -961,7 +981,14 @@ if (bioDialog) {
   $("closeBioSignup")?.addEventListener("click", closeBioSignup);
   bioDialog.addEventListener("click", (event) => { if (event.target === bioDialog) closeBioSignup(); });
   $("bioBirthdate").max = new Date().toISOString().slice(0, 10);
-  biometricSupported().then((ok) => { const open = $("bioSignupOpen"); if (open && !ok) { open.disabled = true; setMessage("formMessage", "Cet appareil ou ce navigateur ne propose pas l'empreinte ni la reconnaissance faciale. Ouvrez OMEGIA dans Chrome sur un téléphone compatible.", true); } });
+  biometricSupported().then((ok) => {
+    const open = $("bioSignupOpen");
+    if (open && !ok) {
+      open.disabled = true;
+      open.textContent = "Empreinte non disponible sur cet appareil";
+      setMessage("formMessage", "L’empreinte / le visage n’est pas disponible ici. Utilise « Créer un nouveau compte (e-mail) ».", true);
+    }
+  });
 
   $("bioSignupForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -969,36 +996,49 @@ if (bioDialog) {
     const lastName = $("bioLastName").value.trim();
     const birthdate = $("bioBirthdate").value;
     const button = $("bioSignupBtn");
-    const fail = (text) => setMessage("bioSignupMessage", text, true);
+    const fail = (text) => {
+      setMessage("bioSignupMessage", text, true);
+      console.error("OMEGIA bio signup:", text);
+    };
 
     if (!firstName || !lastName) { fail("Veuillez saisir votre prénom et votre nom."); return; }
-    const age = birthdate ? ageFrom(birthdate) : null;
+    if (!birthdate) { fail("Veuillez saisir votre date de naissance."); return; }
+    const age = ageFrom(birthdate);
     if (age === null || age < 0 || age > 120) { fail("Veuillez saisir une date de naissance valide."); return; }
     if (age < MIN_AGE) { fail("Vous devez avoir au moins " + MIN_AGE + " ans pour créer un compte."); return; }
-    if (!$("bioAgree").checked) { fail("Cochez la case pour confirmer que vous avez compris."); return; }
-    if (!(await biometricSupported())) { fail("Cet appareil ne propose pas l'empreinte ou le visage dans ce navigateur."); return; }
+    if ($("bioAgree") && !$("bioAgree").checked) { fail("Cochez la case pour confirmer que vous avez compris."); return; }
+
+    const bioOk = await biometricSupported();
+    if (!bioOk) {
+      fail("Cet appareil ne propose pas l'empreinte ou le visage. Ferme cette fenêtre et utilise « Créer un nouveau compte (e-mail) ».");
+      return;
+    }
 
     button.disabled = true;
     button.textContent = "Création du compte…";
     setMessage("bioSignupMessage", "Validez avec votre empreinte ou votre visage…");
     try {
-      // 1) clé locale d'abord : si la personne annule, aucun compte vide n'est créé.
       const credentialId = await createBiometricCredential(firstName + " " + lastName);
       setMessage("bioSignupMessage", "Création de votre compte…");
-      // 2) compte Supabase sans e-mail (connexion anonyme), avec nom, prénom et date de naissance.
       const client = await supabaseReady;
       const { data, error } = await client.auth.signInAnonymously({
         options: { data: { first_name: firstName, last_name: lastName, birthdate, signup_method: "biometric" } }
       });
       if (error) throw error;
+      if (!data?.user) throw new Error("Compte non créé. Réessayez ou utilisez l’inscription par e-mail.");
       currentUser = data.user;
       writeBio({ userId: currentUser.id, credentialId });
       $("bioSignupForm").reset();
       closeBioSignup();
       render("member");
-      alert("Bienvenue sur OMEGIA ! Complétez votre profil (bio, lieu, travail…) depuis l'onglet Profil.");
+      alert("Bienvenue sur OMEGIA ! Complétez votre profil depuis l'onglet Profil.");
     } catch (error) {
-      fail(friendlyError(error));
+      console.error("OMEGIA bio signup error:", error);
+      let msg = friendlyError(error);
+      if (/anonymous/i.test(error?.message || "")) {
+        msg = "L’inscription par empreinte n’est pas activée sur le serveur. Utilise plutôt « Créer un nouveau compte (e-mail) ».";
+      }
+      fail(msg);
     } finally {
       button.disabled = false;
       button.textContent = "Continuer avec l'empreinte ou le visage";
