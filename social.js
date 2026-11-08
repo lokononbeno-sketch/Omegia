@@ -333,6 +333,55 @@ document.querySelectorAll("[data-nav='status'],[data-goto='status']").forEach(b=
 let bound=false, initializedUserId=null;
 async function initForUser(nextUser){if(!nextUser||initializedUserId===nextUser.id)return;user=nextUser;initializedUserId=nextUser.id;if(!bound){bind();bindStickerPicker();bound=true;}await refreshProfile();await Promise.allSettled([loadFeed(),loadStories(),loadStatuses(),loadFriends(),loadChats()]);startGlobalChannel();loadNotifBadge();}
 async function boot(){try{db=await ready;db.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){user=null;initializedUserId=null;active=null;if(channel)db.removeChannel(channel);if(globalCh){db.removeChannel(globalCh);globalCh=null;}profCache.clear();presence=new Set();return;}if((event==="SIGNED_IN"||event==="INITIAL_SESSION"||event==="TOKEN_REFRESHED")&&session?.user){setTimeout(()=>initForUser(session.user).catch(e=>{console.warn("OMEGIA:",e);toast("Services sociaux : "+e.message);}),0);}});const {data:{session}}=await db.auth.getSession();if(session?.user)await initForUser(session.user);}catch(e){console.warn("OMEGIA:",e);toast("Services sociaux : "+e.message);}}
-window.omegiaSocial={openSavedPosts,openMemories};
+
+async function openCommunityModule(kind){
+ const cfg={groups:{table:"omegia_groups",title:"Groupes",create:"Créer un groupe",fields:[["name","Nom du groupe"],["description","Description"]]},pages:{table:"omegia_pages",title:"Pages",create:"Créer une page",fields:[["name","Nom de la page"],["category","Catégorie"],["description","Description"]]},events:{table:"omegia_events",title:"Événements",create:"Créer un événement",fields:[["title","Nom de l’événement"],["description","Description"],["location","Lieu"],["starts_at","Date et heure"]]}}[kind];
+ if(!cfg)return;
+ const w=modal(cfg.title,'<p><button type="button" id="omCommunityCreate">'+cfg.create+'</button> <button type="button" id="omCommunityRefresh">Actualiser</button></p><div id="omCommunityList"><p class="om-note">Chargement…</p></div>');
+ const box=w.querySelector("#omCommunityList");
+ async function refresh(){
+  box.textContent="Chargement…";
+  const {data,error}=await db.from(cfg.table).select("*").order("created_at",{ascending:false}).limit(100);
+  if(error){box.textContent=error.message;return;}
+  box.innerHTML="";
+  if(!data?.length){box.textContent="Aucun élément pour le moment.";return;}
+  for(const item of data){
+   const row=document.createElement("article");row.className="om-user";
+   const info=document.createElement("div");info.className="om-grow";
+   const title=document.createElement("strong");title.textContent=item.name||item.title;
+   const desc=document.createElement("div");desc.className="om-note";desc.textContent=item.description||item.location||item.category||"";
+   info.append(title,desc);row.append(info);
+   let relationTable,relationKey,actionLabel,active;
+   if(kind==="groups"){relationTable="omegia_group_members";relationKey="group_id";actionLabel="Rejoindre";const q=await db.from(relationTable).select("group_id").eq("group_id",item.id).eq("user_id",user.id).maybeSingle();active=!!q.data;actionLabel=active?"Quitter":"Rejoindre";}
+   if(kind==="pages"){relationTable="omegia_page_followers";relationKey="page_id";const q=await db.from(relationTable).select("page_id").eq("page_id",item.id).eq("user_id",user.id).maybeSingle();active=!!q.data;actionLabel=active?"Ne plus suivre":"Suivre";}
+   if(kind==="events"){relationTable="omegia_event_rsvps";relationKey="event_id";const q=await db.from(relationTable).select("response").eq("event_id",item.id).eq("user_id",user.id).maybeSingle();active=q.data?.response==="going";actionLabel=active?"Participation confirmée":"Participer";}
+   const b=document.createElement("button");b.textContent=actionLabel;
+   b.onclick=async()=>{
+    let result;
+    if(kind==="events")result=await db.from(relationTable).upsert({event_id:item.id,user_id:user.id,response:"going"},{onConflict:"event_id,user_id"});
+    else if(active)result=await db.from(relationTable).delete().eq(relationKey,item.id).eq("user_id",user.id);
+    else result=await db.from(relationTable).insert({[relationKey]:item.id,user_id:user.id,role:"member"});
+    if(result.error)toast(result.error.message);else{toast(kind==="events"?"Participation enregistrée.":active?"Action annulée.":"C'est enregistré.");refresh();}
+   };
+   row.append(b);box.append(row);
+  }
+ }
+ w.querySelector("#omCommunityRefresh").onclick=refresh;
+ w.querySelector("#omCommunityCreate").onclick=()=>{
+  const fields=cfg.fields.map(([key,label])=>'<label style="display:block;margin:8px 0">'+label+(key==="description"?'<textarea id="omf_'+key+'"></textarea>':'<input id="omf_'+key+'" '+(key==="starts_at"?'type="datetime-local"':"")+' placeholder="'+label+'" required>')+'</label>').join("");
+  const f=modal(cfg.create,fields+'<button type="button" id="omCommunitySave">Enregistrer</button>');
+  f.querySelector("#omCommunitySave").onclick=async()=>{
+   const payload={created_by:user.id};
+   for(const [key] of cfg.fields){const value=f.querySelector("#omf_"+key).value.trim();if(key!=="description"&&!value){toast("Complète les champs obligatoires.");return;}payload[key]=key==="starts_at"?new Date(value).toISOString():value;}
+   const {data,error}=await db.from(cfg.table).insert(payload).select().single();
+   if(error){toast(error.message);return;}
+   if(kind==="groups"){const r=await db.from("omegia_group_members").insert({group_id:data.id,user_id:user.id,role:"owner"});if(r.error){toast(r.error.message);return;}}
+   if(kind==="pages"){const r=await db.from("omegia_page_followers").insert({page_id:data.id,user_id:user.id});if(r.error){toast(r.error.message);return;}}
+   f.remove();toast("Création enregistrée.");refresh();
+  };
+ };
+ await refresh();
+}
+\nwindow.omegiaSocial={openSavedPosts,openMemories,openCommunityModule};
 window.addEventListener("load",()=>setTimeout(boot,300));
 })();
