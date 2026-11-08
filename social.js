@@ -190,15 +190,22 @@ const lastRead=id=>{try{return Date.parse(localStorage.getItem(readKey(id)))||0;
 async function markRead(id){const {data}=await db.from("messages").select("created_at").eq("conversation_id",id).order("created_at",{ascending:false}).limit(1);const t=data?.[0]?.created_at;if(t)try{localStorage.setItem(readKey(id),t);}catch{}}
 const preview=m=>!m?"Aucun message":m.body==="__OMEGIA_STICKER__"?"Sticker":m.body?m.body:({image:"📷 Photo",video:"🎬 Vidéo",audio:"🎙 Message vocal",file:"📎 Fichier"}[m.attachment_type]||"Message");
 async function startChat(peer){
-  const {data:shared,error}=await db.from("conversation_members").select("conversation_id,conversations!inner(is_group)").eq("user_id",peer).eq("conversations.is_group",false);
-  if(error)return toast(error.message);
-  let id=shared?.[0]?.conversation_id||null;
-  if(!id){
-    const {data:c,error:e1}=await db.from("conversations").insert({created_by:user.id,is_group:false}).select().single();
+  if(!peer||peer===user.id)return toast("Choisis un autre membre.");
+  const {data:mine,error:e0}=await db.from("conversation_members").select("conversation_id").eq("user_id",user.id);
+  if(e0)return toast(e0.message);
+  let id=null;
+  const mineIds=(mine||[]).map(x=>x.conversation_id);
+  if(mineIds.length){
+    const {data:shared,error:e1}=await db.from("conversation_members").select("conversation_id,conversations!inner(is_group)").eq("user_id",peer).in("conversation_id",mineIds).eq("conversations.is_group",false);
     if(e1)return toast(e1.message);
-    id=c.id;
-    const {error:e2}=await db.from("conversation_members").insert([{conversation_id:id,user_id:user.id},{conversation_id:id,user_id:peer}]);
+    id=shared?.[0]?.conversation_id||null;
+  }
+  if(!id){
+    const {data:c,error:e2}=await db.from("conversations").insert({created_by:user.id,is_group:false}).select().single();
     if(e2)return toast(e2.message);
+    id=c.id;
+    const {error:e3}=await db.from("conversation_members").insert([{conversation_id:id,user_id:user.id},{conversation_id:id,user_id:peer}]);
+    if(e3)return toast(e3.message);
   }
   document.querySelectorAll(".om-modal").forEach(m=>m.remove());
   await openChat(id,peer);
