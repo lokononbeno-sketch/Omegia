@@ -596,6 +596,30 @@
     </nav>
   </div>
 
+  <!-- Dialog inscription par empreinte / visage -->
+  <dialog id="bioSignupDialog" aria-labelledby="bioSignupTitle">
+    <div class="dialog-head">
+      <div>
+        <h2 id="bioSignupTitle">Inscription par empreinte</h2>
+        <p>Sans adresse e-mail.</p>
+      </div>
+      <button class="close" type="button" id="closeBioSignup" aria-label="Fermer">×</button>
+    </div>
+    <form class="dialog-body" id="bioSignupForm" novalidate>
+      <div class="row">
+        <input id="bioFirstName" type="text" autocomplete="given-name" placeholder="Prénom" aria-label="Prénom" maxlength="50" required>
+        <input id="bioLastName" type="text" autocomplete="family-name" placeholder="Nom" aria-label="Nom" maxlength="50" required>
+      </div>
+      <label class="field-label" for="bioBirthdate">Date de naissance</label>
+      <input id="bioBirthdate" type="date" autocomplete="bday" required>
+      <p class="legal">Votre empreinte ou votre visage reste sur votre téléphone : OMEGIA ne les reçoit jamais. Ils servent à déverrouiller votre compte sur cet appareil. Vous devez avoir au moins 13 ans.</p>
+      <p class="legal"><strong>Important :</strong> sans adresse e-mail, votre compte est lié à cet appareil. Si vous vous déconnectez, effacez les données de l’application ou changez de téléphone, il ne pourra pas être récupéré. Vous pourrez ajouter une adresse e-mail plus tard depuis votre profil.</p>
+      <label class="legal"><input id="bioAgree" type="checkbox" style="height:auto;width:auto"> J’ai compris</label>
+      <button class="create-button wide" type="submit" id="bioSignupBtn">Continuer avec l'empreinte ou le visage</button>
+      <p class="form-message" id="bioSignupMessage" role="status" aria-live="polite"></p>
+    </form>
+  </dialog>
+
   <!-- Dialog inscription -->
   <dialog id="signupDialog" aria-labelledby="signupTitle">
     <div class="dialog-head">
@@ -618,6 +642,9 @@
       <p class="legal">Mot de passe : 8 caractères minimum. Vous devez avoir au moins 13 ans pour créer un compte OMEGIA.</p>
       <button class="create-button wide" type="submit" id="signupBtn">S'inscrire</button>
       <p class="form-message" id="signupMessage" role="status" aria-live="polite"></p>
+      <hr class="divider">
+      <p class="legal">Pas d’adresse e-mail ? Inscrivez-vous avec l’empreinte ou le visage de votre téléphone.</p>
+      <button class="create-button wide" type="button" id="bioSignupOpen" style="display:none">S’inscrire avec l’empreinte ou le visage</button>
     </form>
   </dialog>
 
