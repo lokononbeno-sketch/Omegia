@@ -1,5 +1,5 @@
-const CACHE = "omegia-shell-v11";
-const FILES = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./assets/omega.svg"];
+const CACHE = "omegia-shell-v12";
+const FILES = ["./", "./index.html", "./styles.css", "./app.js", "./features.js", "./manifest.webmanifest", "./assets/omega.svg"];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

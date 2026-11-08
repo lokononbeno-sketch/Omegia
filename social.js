@@ -9,7 +9,7 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 const name=p=>((p?.first_name||"")+" "+(p?.last_name||"")).trim()||"Membre";
 const initials=p=>((p?.first_name||"")[0]||"Ω")+((p?.last_name||"")[0]||"");
 const av=p=>p?.avatar_url?'<img class="om-avatar" src="'+esc(p.avatar_url)+'" alt="">':'<div class="om-avatar">'+esc(initials(p))+'</div>';
-function toast(s){let n=$("omToast");if(!n){n=document.createElement("div");n.id="omToast";n.style.cssText="position:fixed;z-index:11000;bottom:90px;left:50%;transform:translateX(-50%);background:#29213b;color:white;padding:12px 18px;border-radius:14px;max-width:90%;text-align:center";document.body.appendChild(n);}n.textContent=s;n.hidden=false;clearTimeout(n._t);n._t=setTimeout(()=>n.hidden=true,3500);}
+function toast(s){try{window.omegiaSocial?.onToast?.(s);}catch{}let n=$("omToast");if(!n){n=document.createElement("div");n.id="omToast";n.style.cssText="position:fixed;z-index:11000;bottom:90px;left:50%;transform:translateX(-50%);background:#29213b;color:white;padding:12px 18px;border-radius:14px;max-width:90%;text-align:center";document.body.appendChild(n);}n.textContent=s;n.hidden=false;clearTimeout(n._t);n._t=setTimeout(()=>n.hidden=true,3500);}
 function modal(title,body){const w=document.createElement("div");w.className="om-modal";w.innerHTML='<section class="om-panel" role="dialog" aria-modal="true"><h2>'+esc(title)+'</h2>'+body+'</section>';w.onclick=e=>{if(e.target===w)w.remove();};document.body.appendChild(w);return w;}
 function pick(accept){const i=document.createElement("input");i.type="file";i.accept=accept;i.click();return new Promise(r=>i.onchange=()=>r(i.files?.[0]||null));}
 async function upload(f,folder){if(!f)return null;if(f.size>150*1024*1024)throw Error("Fichier supérieur à 150 Mo.");const ext=(f.name.split(".").pop()||"bin").replace(/[^a-z0-9]/gi,"");const path=user.id+"/"+folder+"/"+crypto.randomUUID()+"."+ext;const {data,error}=await db.storage.from(BUCKET).upload(path,f,{contentType:f.type||"application/octet-stream"});if(error)throw error;return db.storage.from(BUCKET).getPublicUrl(data.path).data.publicUrl;}
@@ -81,7 +81,7 @@ function postCard(p,nLikes,liked,nComments){
   el.innerHTML='<div class="om-post-head">'+av(p.profiles)+'<div class="om-grow"><strong>'+esc(name(p.profiles))+'</strong><div class="om-note">'+timeAgo(p.created_at)+' · '+(p.visibility==="public"?"🌐 Public":"👥 Amis")+'</div></div>'+(own?'<button type="button" class="om-ghost" data-del aria-label="Supprimer la publication">🗑</button>':'')+'</div>'
     +(p.body?'<div class="om-post-body">'+esc(p.body)+'</div>':'')+media(p.media_url,p.media_type)
     +'<div class="om-counts om-note"><span data-nl></span><span data-nc></span></div>'
-    +'<div class="om-feed-actions"><button type="button" data-like>👍 J’aime</button><button type="button" data-toggle>💬 Commenter</button><button type="button" data-save aria-pressed="false">🔖 Enregistrer</button></div><div class="om-comments" hidden></div>';
+    +'<div class="om-feed-actions"><button type="button" data-like>👍 J’aime</button><button type="button" data-toggle>💬 Commenter</button><button type="button" data-save aria-pressed="false">🔖 Enregistrer</button><button type="button" data-share>↗ Partager</button></div><div class="om-comments" hidden></div>';
   let l=nLikes,on=liked,c=nComments;
   const paint=()=>{el.querySelector("[data-nl]").textContent=l?"👍 "+l:"";el.querySelector("[data-nc]").textContent=c?c+" commentaire"+(c>1?"s":""):"";const b=el.querySelector("[data-like]");b.classList.toggle("on",on);b.setAttribute("aria-pressed",String(on));};
   paint();
@@ -95,6 +95,7 @@ function postCard(p,nLikes,liked,nComments){
   const paintSaved=()=>{const yes=savedPostIds().includes(p.id);saveBtn.textContent=yes?"🔖 Enregistré":"🔖 Enregistrer";saveBtn.setAttribute("aria-pressed",String(yes));saveBtn.classList.toggle("on",yes);};
   paintSaved();
   saveBtn.onclick=()=>{const ids=savedPostIds(),yes=ids.includes(p.id);const next=yes?ids.filter(id=>id!==p.id):[...ids,p.id];try{localStorage.setItem("omegia.saved."+user.id,JSON.stringify(next));paintSaved();toast(yes?"Publication retirée des enregistrements.":"Publication enregistrée sur cet appareil.");}catch(e){toast("Impossible d’enregistrer sur cet appareil.");}};
+  el.querySelector("[data-share]").onclick=async()=>{const text=name(p.profiles)+" : "+(p.body||"").slice(0,200),link=location.origin+location.pathname;try{if(navigator.share){await navigator.share({title:"OMEGIA",text,url:link});}else{await navigator.clipboard.writeText(text+" — "+link);toast("Texte et lien copiés.");}}catch(e){if(e?.name!=="AbortError")toast("Partage impossible sur cet appareil.");}};
   const cbox=el.querySelector(".om-comments");
   el.querySelector("[data-toggle]").onclick=async()=>{cbox.hidden=!cbox.hidden;if(!cbox.hidden)await renderComments(p.id,cbox,n=>{c=n;paint();});};
   el.querySelector("[data-del]")?.addEventListener("click",async()=>{if(!confirm("Supprimer cette publication ?"))return;const {error}=await db.from("posts").delete().eq("id",p.id);if(error)return toast(error.message);el.remove();toast("Publication supprimée.");});
@@ -333,6 +334,6 @@ document.querySelectorAll("[data-nav='status'],[data-goto='status']").forEach(b=
 let bound=false, initializedUserId=null;
 async function initForUser(nextUser){if(!nextUser||initializedUserId===nextUser.id)return;user=nextUser;initializedUserId=nextUser.id;if(!bound){bind();bindStickerPicker();bound=true;}await refreshProfile();await Promise.allSettled([loadFeed(),loadStories(),loadStatuses(),loadFriends(),loadChats()]);startGlobalChannel();loadNotifBadge();}
 async function boot(){try{db=await ready;db.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){user=null;initializedUserId=null;active=null;if(channel)db.removeChannel(channel);if(globalCh){db.removeChannel(globalCh);globalCh=null;}profCache.clear();presence=new Set();return;}if((event==="SIGNED_IN"||event==="INITIAL_SESSION"||event==="TOKEN_REFRESHED")&&session?.user){setTimeout(()=>initForUser(session.user).catch(e=>{console.warn("OMEGIA:",e);toast("Services sociaux : "+e.message);}),0);}});const {data:{session}}=await db.auth.getSession();if(session?.user)await initForUser(session.user);}catch(e){console.warn("OMEGIA:",e);toast("Services sociaux : "+e.message);}}
-window.omegiaSocial={openSavedPosts,openMemories};
+window.omegiaSocial={openSavedPosts,openMemories,modal,toast,esc,media,get db(){return db;},get user(){return user;}};
 window.addEventListener("load",()=>setTimeout(boot,300));
 })();

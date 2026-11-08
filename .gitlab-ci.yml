@@ -10,6 +10,7 @@ javascript-syntax:
   script:
     - node --check app.js
     - node --check social.js
+    - node --check features.js
   rules:
     - if: '$CI_COMMIT_BRANCH'
 
@@ -17,7 +18,7 @@ pages:
   stage: deploy
   script:
     - mkdir -p public
-    - cp index.html app.js social.js styles.css manifest.webmanifest sw.js public/
+    - cp index.html app.js social.js features.js styles.css manifest.webmanifest sw.js public/
     - if [ -d assets ]; then cp -r assets public/assets; fi
   artifacts:
     paths:
