@@ -42,6 +42,8 @@ function friendlyError(error) {
   };
   if (known[msg]) return known[msg];
   if (/rate limit|too many requests|security purposes/i.test(msg)) return "Trop de tentatives. Patientez quelques instants avant de réessayer.";
+  if (/captcha/i.test(msg)) return "La vérification de sécurité a échoué. Réessayez.";
+  if (/anonymous sign-?ins? (are|is) disabled/i.test(msg)) return "L'inscription par empreinte n'est pas encore activée sur le serveur. Utilisez votre adresse e-mail pour l'instant.";
   if (/signups? (not allowed|(is|are) disabled)/i.test(msg)) return "Les inscriptions sont momentanément fermées.";
   if (/different from the old password/i.test(msg)) return "Le nouveau mot de passe doit être différent de l'ancien.";
   if (/password should be|weak password/i.test(msg)) return "Mot de passe trop faible. Utilisez au moins 8 caractères variés.";
@@ -662,6 +664,7 @@ function biometricEnabledFor(user) {
   return Boolean(bio && user && bio.userId === user.id);
 }
 async function refreshBioButton() {
+  refreshSecureButton();
   const button = $("bioToggle");
   if (!button) return;
   if (!(await biometricSupported())) { button.hidden = true; return; }
@@ -675,7 +678,7 @@ async function enableBiometric() {
     publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
       rp: { name: "OMEGIA" },
-      user: { id: new TextEncoder().encode(currentUser.id), name: currentUser.email, displayName: currentUser.email },
+      user: { id: new TextEncoder().encode(currentUser.id), name: currentUser.email || getDisplayName(currentUser), displayName: currentUser.email || getDisplayName(currentUser) },
       pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
       authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged" },
       attestation: "none",
@@ -684,6 +687,83 @@ async function enableBiometric() {
   });
   writeBio({ userId: currentUser.id, credentialId: b64u.enc(credential.rawId) });
 }
+// Crée une clé d'empreinte/visage stockée sur l'appareil (jamais envoyée à OMEGIA) et renvoie son identifiant.
+async function createBiometricCredential(label) {
+  const credential = await navigator.credentials.create({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: "OMEGIA" },
+      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: label, displayName: label },
+      pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "discouraged" },
+      attestation: "none",
+      timeout: 60000
+    }
+  });
+  return b64u.enc(credential.rawId);
+}
+
+// Compte sans e-mail : proposer d'en ajouter un pour pouvoir le récupérer.
+function refreshSecureButton() {
+  let btn = $("secureAccountBtn");
+  // La connexion par e-mail est désactivée : le bouton d'ajout d'e-mail reste masqué pour l'instant.
+  if (btn) btn.hidden = true;
+  return;
+  if (!btn) {
+    const anchor = $("bioToggle");
+    if (!anchor) return;
+    btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "secureAccountBtn";
+    btn.className = anchor.className;
+    btn.addEventListener("click", secureAccount);
+    anchor.after(btn);
+  }
+  btn.hidden = false;
+  btn.textContent = "Ajouter une adresse e-mail à mon compte";
+}
+async function secureAccount() {
+  const email = (prompt("Adresse e-mail à associer à votre compte :") || "").trim();
+  if (!email) return;
+  if (!EMAIL_RE.test(email)) { alert("Adresse e-mail invalide."); return; }
+  try {
+    const client = await supabaseReady;
+    const { error } = await client.auth.updateUser({ email }, { emailRedirectTo: OMEGIA_PUBLIC_URL });
+    if (error) throw error;
+    alert("Un e-mail de confirmation vous a été envoyé. Après l'avoir confirmé, utilisez « Mot de passe oublié ? » pour choisir un mot de passe et vous connecter depuis n'importe quel appareil.");
+  } catch (error) {
+    alert(friendlyError(error));
+  }
+}
+
+// Bouton « Renvoyer l'e-mail de confirmation » après une inscription par e-mail.
+function offerResend(email) {
+  let btn = $("resendBtn");
+  if (!btn) {
+    btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "resendBtn";
+    btn.className = "link-text";
+    btn.style.marginTop = "8px";
+    $("signupMessage").after(btn);
+  }
+  btn.hidden = false;
+  btn.disabled = false;
+  btn.textContent = "Renvoyer l'e-mail de confirmation";
+  btn.onclick = async () => {
+    btn.disabled = true;
+    try {
+      const client = await supabaseReady;
+      const { error } = await client.auth.resend({ type: "signup", email, options: { emailRedirectTo: OMEGIA_PUBLIC_URL } });
+      if (error) throw error;
+      setMessage("signupMessage", "E-mail renvoyé. Pensez à vérifier vos courriers indésirables.");
+    } catch (error) {
+      setMessage("signupMessage", friendlyError(error), true);
+    }
+    setTimeout(() => { btn.disabled = false; }, 30000);
+  };
+}
+
 async function verifyBiometric() {
   const bio = readBio();
   if (!bio) throw new Error("Le déverrouillage biométrique n'est pas activé.");
@@ -820,6 +900,7 @@ $("signupForm").addEventListener("submit", async (event) => {
       render("member");
     } else {
       setMessage("signupMessage", "Inscription envoyée ! Consultez votre boîte e-mail pour confirmer votre adresse avant de vous connecter.");
+      offerResend(email);
     }
   } catch (error) {
     fail(friendlyError(error));
@@ -828,6 +909,116 @@ $("signupForm").addEventListener("submit", async (event) => {
     button.textContent = "S'inscrire";
   }
 });
+
+// ---------- Cloudflare Turnstile (CAPTCHA exigé par Supabase) ----------
+const TURNSTILE_SITE_KEY = "0x4AAAAAAF4kQ0HrmQ_iNS--";
+let bioCaptchaToken = "";
+let bioCaptchaWidget = null;
+let turnstilePromise = null;
+function loadTurnstile() {
+  if (window.turnstile) return Promise.resolve(window.turnstile);
+  if (!turnstilePromise) {
+    turnstilePromise = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+      s.async = true;
+      s.onload = () => (window.turnstile ? resolve(window.turnstile) : reject(new Error("turnstile")));
+      s.onerror = () => reject(new Error("turnstile"));
+      document.head.appendChild(s);
+    });
+    turnstilePromise.catch(() => { turnstilePromise = null; });
+  }
+  return turnstilePromise;
+}
+async function renderBioCaptcha() {
+  const box = $("bioCaptcha");
+  if (!box) return;
+  try {
+    const ts = await loadTurnstile();
+    if (bioCaptchaWidget !== null) { bioCaptchaToken = ""; ts.reset(bioCaptchaWidget); return; }
+    bioCaptchaWidget = ts.render(box, {
+      sitekey: TURNSTILE_SITE_KEY,
+      callback: (token) => { bioCaptchaToken = token; },
+      "expired-callback": () => { bioCaptchaToken = ""; },
+      "error-callback": () => {
+        bioCaptchaToken = "";
+        setMessage("bioSignupMessage", "La vérification de sécurité a échoué (connexion, clé ou domaine non autorisé ?). Rouvrez cette fenêtre pour réessayer.", true);
+      }
+    });
+  } catch {
+    setMessage("bioSignupMessage", "La vérification de sécurité ne se charge pas. Vérifiez votre connexion Internet.", true);
+  }
+}
+function resetBioCaptcha() {
+  bioCaptchaToken = "";
+  if (window.turnstile && bioCaptchaWidget !== null) window.turnstile.reset(bioCaptchaWidget);
+}
+
+// ---------- Inscription par empreinte / visage (sans e-mail) ----------
+const bioDialog = $("bioSignupDialog");
+function openBioSignup() {
+  setMessage("bioSignupMessage", "");
+  closeSignup();
+  if (typeof bioDialog.showModal === "function") bioDialog.showModal();
+  else bioDialog.setAttribute("open", "");
+  renderBioCaptcha();
+  $("bioFirstName").focus();
+}
+function closeBioSignup() {
+  if (typeof bioDialog.close === "function") bioDialog.close();
+  else bioDialog.removeAttribute("open");
+}
+if (bioDialog) {
+  $("bioSignupOpen")?.addEventListener("click", openBioSignup);
+  $("closeBioSignup")?.addEventListener("click", closeBioSignup);
+  bioDialog.addEventListener("click", (event) => { if (event.target === bioDialog) closeBioSignup(); });
+  $("bioBirthdate").max = new Date().toISOString().slice(0, 10);
+  biometricSupported().then((ok) => { const open = $("bioSignupOpen"); if (open && !ok) { open.disabled = true; setMessage("formMessage", "Cet appareil ou ce navigateur ne propose pas l'empreinte ni la reconnaissance faciale. Ouvrez OMEGIA dans Chrome sur un téléphone compatible.", true); } });
+
+  $("bioSignupForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const firstName = $("bioFirstName").value.trim();
+    const lastName = $("bioLastName").value.trim();
+    const birthdate = $("bioBirthdate").value;
+    const button = $("bioSignupBtn");
+    const fail = (text) => setMessage("bioSignupMessage", text, true);
+
+    if (!firstName || !lastName) { fail("Veuillez saisir votre prénom et votre nom."); return; }
+    const age = birthdate ? ageFrom(birthdate) : null;
+    if (age === null || age < 0 || age > 120) { fail("Veuillez saisir une date de naissance valide."); return; }
+    if (age < MIN_AGE) { fail("Vous devez avoir au moins " + MIN_AGE + " ans pour créer un compte."); return; }
+    if (!$("bioAgree").checked) { fail("Cochez la case pour confirmer que vous avez compris."); return; }
+    if (!bioCaptchaToken) { fail("Validez d'abord la vérification de sécurité ci-dessus (ou rouvrez cette fenêtre si elle n'apparaît pas)."); return; }
+    if (!(await biometricSupported())) { fail("Cet appareil ne propose pas l'empreinte ou le visage dans ce navigateur."); return; }
+
+    button.disabled = true;
+    button.textContent = "Création du compte…";
+    setMessage("bioSignupMessage", "Validez avec votre empreinte ou votre visage…");
+    try {
+      // 1) clé locale d'abord : si la personne annule, aucun compte vide n'est créé.
+      const credentialId = await createBiometricCredential(firstName + " " + lastName);
+      setMessage("bioSignupMessage", "Création de votre compte…");
+      // 2) compte Supabase sans e-mail (connexion anonyme), avec nom, prénom et date de naissance.
+      const client = await supabaseReady;
+      const { data, error } = await client.auth.signInAnonymously({
+        options: { captchaToken: bioCaptchaToken, data: { first_name: firstName, last_name: lastName, birthdate, signup_method: "biometric" } }
+      });
+      if (error) throw error;
+      currentUser = data.user;
+      writeBio({ userId: currentUser.id, credentialId });
+      $("bioSignupForm").reset();
+      closeBioSignup();
+      render("member");
+      alert("Bienvenue sur OMEGIA ! Complétez votre profil (bio, lieu, travail…) depuis l'onglet Profil.");
+    } catch (error) {
+      fail(friendlyError(error));
+    } finally {
+      button.disabled = false;
+      button.textContent = "Continuer avec l'empreinte ou le visage";
+      resetBioCaptcha();
+    }
+  });
+}
 
 // ---------- Récupération ----------
 $("recoveryForm").addEventListener("submit", async (event) => {
@@ -858,6 +1049,7 @@ $("recoveryForm").addEventListener("submit", async (event) => {
 
 // ---------- Déconnexion ----------
 async function signOut() {
+  if (!confirm("Attention : la connexion par e-mail est désactivée. Si vous vous déconnectez, vous ne pourrez plus rouvrir ce compte. Continuer ?")) return;
   try {
     const client = await supabaseReady;
     const { error } = await client.auth.signOut();
