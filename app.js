@@ -705,7 +705,9 @@ async function createBiometricCredential(label) {
 // Compte sans e-mail : proposer d'en ajouter un pour pouvoir le récupérer.
 function refreshSecureButton() {
   let btn = $("secureAccountBtn");
-  if (!currentUser?.is_anonymous) { if (btn) btn.hidden = true; return; }
+  // La connexion par e-mail est désactivée : le bouton d'ajout d'e-mail reste masqué pour l'instant.
+  if (btn) btn.hidden = true;
+  return;
   if (!btn) {
     const anchor = $("bioToggle");
     if (!anchor) return;
@@ -925,7 +927,7 @@ if (bioDialog) {
   $("closeBioSignup")?.addEventListener("click", closeBioSignup);
   bioDialog.addEventListener("click", (event) => { if (event.target === bioDialog) closeBioSignup(); });
   $("bioBirthdate").max = new Date().toISOString().slice(0, 10);
-  biometricSupported().then((ok) => { const open = $("bioSignupOpen"); if (open) open.style.display = ok ? "" : "none"; });
+  biometricSupported().then((ok) => { const open = $("bioSignupOpen"); if (open && !ok) { open.disabled = true; setMessage("formMessage", "Cet appareil ou ce navigateur ne propose pas l'empreinte ni la reconnaissance faciale. Ouvrez OMEGIA dans Chrome sur un téléphone compatible.", true); } });
 
   $("bioSignupForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -960,7 +962,7 @@ if (bioDialog) {
       $("bioSignupForm").reset();
       closeBioSignup();
       render("member");
-      alert("Bienvenue sur OMEGIA ! Complétez votre profil (bio, lieu, travail…) depuis l'onglet Profil. Pensez à ajouter une adresse e-mail pour ne jamais perdre votre compte.");
+      alert("Bienvenue sur OMEGIA ! Complétez votre profil (bio, lieu, travail…) depuis l'onglet Profil.");
     } catch (error) {
       fail(friendlyError(error));
     } finally {
@@ -999,7 +1001,7 @@ $("recoveryForm").addEventListener("submit", async (event) => {
 
 // ---------- Déconnexion ----------
 async function signOut() {
-  if (currentUser?.is_anonymous && !confirm("Attention : ce compte n'a pas d'adresse e-mail. Si vous vous déconnectez, il sera définitivement perdu. Continuer ?")) return;
+  if (!confirm("Attention : la connexion par e-mail est désactivée. Si vous vous déconnectez, vous ne pourrez plus rouvrir ce compte. Continuer ?")) return;
   try {
     const client = await supabaseReady;
     const { error } = await client.auth.signOut();

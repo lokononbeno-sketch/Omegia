@@ -22,14 +22,16 @@
       <h2 class="sr-only" id="authTitle">Accès à OMEGIA</h2>
 
       <div id="guestArea">
-        <form id="loginForm" novalidate>
+        <form id="loginForm" novalidate hidden style="display:none">
           <input id="email" name="email" type="email" autocomplete="email" placeholder="Adresse e-mail" aria-label="Adresse e-mail" required>
           <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Mot de passe" aria-label="Mot de passe" required>
           <button class="primary-button" type="submit" id="loginBtn">Se connecter</button>
           <a href="#" id="forgotLink" class="forgot">Mot de passe oublié ?</a>
         </form>
         <hr class="divider">
-        <button class="create-button" type="button" id="openSignup">Créer un nouveau compte</button>
+        <button class="primary-button" type="button" id="bioSignupOpen">Créer mon compte avec l’empreinte ou le visage</button>
+        <p class="pane-text" style="margin-top:12px">Déjà inscrit sur cet appareil ? Rouvrez simplement OMEGIA : l’application se déverrouille avec votre empreinte ou votre visage.</p>
+        <button class="create-button" type="button" id="openSignup" style="display:none">Créer un nouveau compte</button>
       </div>
 
       <form id="recoveryForm" hidden novalidate>
@@ -613,7 +615,7 @@
       <label class="field-label" for="bioBirthdate">Date de naissance</label>
       <input id="bioBirthdate" type="date" autocomplete="bday" required>
       <p class="legal">Votre empreinte ou votre visage reste sur votre téléphone : OMEGIA ne les reçoit jamais. Ils servent à déverrouiller votre compte sur cet appareil. Vous devez avoir au moins 13 ans.</p>
-      <p class="legal"><strong>Important :</strong> sans adresse e-mail, votre compte est lié à cet appareil. Si vous vous déconnectez, effacez les données de l’application ou changez de téléphone, il ne pourra pas être récupéré. Vous pourrez ajouter une adresse e-mail plus tard depuis votre profil.</p>
+      <p class="legal"><strong>Important :</strong> votre compte est lié à cet appareil. Si vous vous déconnectez, effacez les données de l’application ou changez de téléphone, il ne pourra pas être récupéré pour l’instant.</p>
       <label class="legal"><input id="bioAgree" type="checkbox" style="height:auto;width:auto"> J’ai compris</label>
       <button class="create-button wide" type="submit" id="bioSignupBtn">Continuer avec l'empreinte ou le visage</button>
       <p class="form-message" id="bioSignupMessage" role="status" aria-live="polite"></p>
@@ -643,8 +645,8 @@
       <button class="create-button wide" type="submit" id="signupBtn">S'inscrire</button>
       <p class="form-message" id="signupMessage" role="status" aria-live="polite"></p>
       <hr class="divider">
-      <p class="legal">Pas d’adresse e-mail ? Inscrivez-vous avec l’empreinte ou le visage de votre téléphone.</p>
-      <button class="create-button wide" type="button" id="bioSignupOpen" style="display:none">S’inscrire avec l’empreinte ou le visage</button>
+      
+      
     </form>
   </dialog>
 
