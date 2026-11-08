@@ -1,6 +1,17 @@
 stages:
+  - validate
   - deploy
   - build
+
+# Vérifie la syntaxe JavaScript sur toutes les branches, y compris les branches de travail.
+javascript-syntax:
+  stage: validate
+  image: node:22-alpine
+  script:
+    - node --check app.js
+    - node --check social.js
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
 
 pages:
   stage: deploy
