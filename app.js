@@ -306,7 +306,8 @@ const settingMessages = {
 document.querySelectorAll("[data-setting]").forEach((btn) => {
   btn.addEventListener("click", () => {
     const s = btn.dataset.setting;
-    if (s === "groups" || s === "pages" || s === "events") { $("sideMenu").hidden = true; window.omegiaSocial?.openCommunityModule(s); return; }\n    if (s === "saved" || s === "memories") {
+    if (s === "groups" || s === "pages" || s === "events") { $("sideMenu").hidden = true; window.omegiaSocial?.openCommunityModule(s); return; }
+    if (s === "saved" || s === "memories") {
       $("sideMenu").hidden = true;
       if (window.omegiaSocial) (s === "saved" ? window.omegiaSocial.openSavedPosts() : window.omegiaSocial.openMemories());
       else alert("Le module social est en cours de chargement. Réessaie dans un instant.");
