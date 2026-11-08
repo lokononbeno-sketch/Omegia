@@ -337,6 +337,25 @@ document.querySelectorAll("[data-open-panel]").forEach((btn) => {
   });
 });
 
+// Préférences locales réellement appliquées sur cet appareil.
+const ACCESS_KEY = "omegia.accessibility";
+function applyAccessibilityPrefs(prefs) {
+  const root = document.documentElement;
+  root.style.fontSize = prefs.largeText ? "18px" : "";
+  let style = document.getElementById("omegiaReducedMotion");
+  if (prefs.reduceMotion) {
+    if (!style) {
+      style = document.createElement("style");
+      style.id = "omegiaReducedMotion";
+      style.textContent = "*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}";
+      document.head.appendChild(style);
+    }
+  } else if (style) style.remove();
+}
+let accessibilityPrefs = {largeText:false,reduceMotion:false};
+try { accessibilityPrefs = {...accessibilityPrefs,...JSON.parse(localStorage.getItem(ACCESS_KEY)||"{}")}; } catch {}
+applyAccessibilityPrefs(accessibilityPrefs);
+
 document.querySelectorAll("[data-setting-item]").forEach((btn) => {
   btn.addEventListener("click", () => {
     const key = btn.dataset.settingItem;
@@ -365,9 +384,24 @@ document.querySelectorAll("[data-setting-item]").forEach((btn) => {
       cookies: "Politique cookies",
       community: "Standards de la communauté",
       about: "OMEGIA — One app. Infinite connections.\nCréé par Beno Lokonon.",
-      password: "Changement de mot de passe — utilise « Mot de passe oublié » pour l’instant, ou Supabase Auth plus tard."
+      password: "Pour changer ton mot de passe, utilise le lien « Mot de passe oublié » sur l’écran de connexion."
     };
-    alert((labels[key] || key) + "\n\nRéglage détaillé bientôt disponible.");
+    if (key === "profile-info") {
+      fillAccountForm();
+      showView("account");
+      return;
+    }
+    if (key === "accessibility") {
+      const choice = prompt("Accessibilité OMEGIA\n\n1 — Texte normal\n2 — Texte agrandi\n3 — Réduire les animations\n4 — Texte agrandi + animations réduites\n\nEntre 1, 2, 3 ou 4 :", "1");
+      if (choice === null) return;
+      if (!["1","2","3","4"].includes(choice)) return alert("Choix non reconnu.");
+      accessibilityPrefs = {largeText:choice==="2"||choice==="4",reduceMotion:choice==="3"||choice==="4"};
+      try { localStorage.setItem(ACCESS_KEY,JSON.stringify(accessibilityPrefs)); } catch {}
+      applyAccessibilityPrefs(accessibilityPrefs);
+      alert("Préférences d’accessibilité appliquées sur cet appareil.");
+      return;
+    }
+    alert((labels[key] || key) + "\n\nCette option n’est pas encore reliée à un réglage fonctionnel. Elle reste à développer.");
   });
 });
 
