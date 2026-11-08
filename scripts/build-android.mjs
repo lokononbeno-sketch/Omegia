@@ -45,8 +45,8 @@ if (fs.existsSync(anydpi)) {
 const gradleFile = path.join(root, "android/app/build.gradle");
 if (fs.existsSync(gradleFile)) {
   let gradle = fs.readFileSync(gradleFile, "utf8");
-  gradle = gradle.replace(/versionCode\s+1\b/, "versionCode 7");
-  gradle = gradle.replace(/versionName\s+"[^"]+"/, 'versionName "1.0.6"');
+  gradle = gradle.replace(/versionCode\s+1\b/, "versionCode 8");
+  gradle = gradle.replace(/versionName\s+"[^"]+"/, 'versionName "1.0.7"');
   fs.writeFileSync(gradleFile, gradle);
 }
 
@@ -54,7 +54,7 @@ if (fs.existsSync(gradleFile)) {
 const manifestFile = path.join(root, "android/app/src/main/AndroidManifest.xml");
 if (fs.existsSync(manifestFile)) {
   let manifest = fs.readFileSync(manifestFile, "utf8");
-  const perms = ["android.permission.RECORD_AUDIO", "android.permission.CAMERA", "android.permission.MODIFY_AUDIO_SETTINGS"];
+  const perms = ["android.permission.RECORD_AUDIO", "android.permission.CAMERA", "android.permission.MODIFY_AUDIO_SETTINGS", "android.permission.USE_BIOMETRIC", "android.permission.USE_FINGERPRINT"];
   const add = perms.filter((p) => !manifest.includes(p)).map((p) => `    <uses-permission android:name="${p}" />`).join("\n");
   if (add) manifest = manifest.replace("</manifest>", add + "\n</manifest>");
   fs.writeFileSync(manifestFile, manifest);
