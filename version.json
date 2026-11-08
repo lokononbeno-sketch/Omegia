@@ -1,6 +1,6 @@
 {
-  "version": "1.0.3",
+  "version": "1.0.4",
   "name": "OMEGIA",
   "apk": "https://gitlab.com/api/v4/projects/88621748/jobs/artifacts/main/raw/dist/OMEGIA.apk?job=android-apk",
-  "notes": "Inscription par empreinte ou visage ; appels audio/vidéo, réglages et menu activés."
+  "notes": "Confidentialité appliquée (profil verrouillé, stories et messages entre amis, recherche), réglages synchronisés sur le compte, appels audio/vidéo."
 }
