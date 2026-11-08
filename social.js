@@ -81,7 +81,7 @@ function postCard(p,nLikes,liked,nComments){
   el.innerHTML='<div class="om-post-head">'+av(p.profiles)+'<div class="om-grow"><strong>'+esc(name(p.profiles))+'</strong><div class="om-note">'+timeAgo(p.created_at)+' · '+(p.visibility==="public"?"🌐 Public":"👥 Amis")+'</div></div>'+(own?'<button type="button" class="om-ghost" data-del aria-label="Supprimer la publication">🗑</button>':'')+'</div>'
     +(p.body?'<div class="om-post-body">'+esc(p.body)+'</div>':'')+media(p.media_url,p.media_type)
     +'<div class="om-counts om-note"><span data-nl></span><span data-nc></span></div>'
-    +'<div class="om-feed-actions"><button type="button" data-like>👍 J’aime</button><button type="button" data-toggle>💬 Commenter</button></div><div class="om-comments" hidden></div>';
+    +'<div class="om-feed-actions"><button type="button" data-like>👍 J’aime</button><button type="button" data-toggle>💬 Commenter</button><button type="button" data-save aria-pressed="false">🔖 Enregistrer</button></div><div class="om-comments" hidden></div>';
   let l=nLikes,on=liked,c=nComments;
   const paint=()=>{el.querySelector("[data-nl]").textContent=l?"👍 "+l:"";el.querySelector("[data-nc]").textContent=c?c+" commentaire"+(c>1?"s":""):"";const b=el.querySelector("[data-like]");b.classList.toggle("on",on);b.setAttribute("aria-pressed",String(on));};
   paint();
@@ -90,10 +90,35 @@ function postCard(p,nLikes,liked,nComments){
     const {error}=was?await db.from("post_reactions").delete().eq("post_id",p.id).eq("user_id",user.id):await db.from("post_reactions").upsert({post_id:p.id,user_id:user.id,reaction:"like"},{onConflict:"post_id,user_id"});
     if(error){on=was;l+=was?1:-1;paint();toast(error.message);}
   };
+  const savedPostIds=()=>{try{return JSON.parse(localStorage.getItem("omegia.saved."+user.id)||"[]");}catch{return [];}};
+  const saveBtn=el.querySelector("[data-save]");
+  const paintSaved=()=>{const yes=savedPostIds().includes(p.id);saveBtn.textContent=yes?"🔖 Enregistré":"🔖 Enregistrer";saveBtn.setAttribute("aria-pressed",String(yes));saveBtn.classList.toggle("on",yes);};
+  paintSaved();
+  saveBtn.onclick=()=>{const ids=savedPostIds(),yes=ids.includes(p.id);const next=yes?ids.filter(id=>id!==p.id):[...ids,p.id];try{localStorage.setItem("omegia.saved."+user.id,JSON.stringify(next));paintSaved();toast(yes?"Publication retirée des enregistrements.":"Publication enregistrée sur cet appareil.");}catch(e){toast("Impossible d’enregistrer sur cet appareil.");}};
   const cbox=el.querySelector(".om-comments");
   el.querySelector("[data-toggle]").onclick=async()=>{cbox.hidden=!cbox.hidden;if(!cbox.hidden)await renderComments(p.id,cbox,n=>{c=n;paint();});};
   el.querySelector("[data-del]")?.addEventListener("click",async()=>{if(!confirm("Supprimer cette publication ?"))return;const {error}=await db.from("posts").delete().eq("id",p.id);if(error)return toast(error.message);el.remove();toast("Publication supprimée.");});
   return el;
+}
+async function openSavedPosts(){
+  const w=modal("Mes enregistrements",'<div id="omSavedList"><p class="om-note">Chargement…</p></div><p class="om-note">Les enregistrements sont conservés sur cet appareil et associés à ce compte.</p>');
+  const box=w.querySelector("#omSavedList"),ids=(()=>{try{return JSON.parse(localStorage.getItem("omegia.saved."+user.id)||"[]");}catch{return [];}})();
+  if(!ids.length){box.innerHTML='<p class="om-note">Aucune publication enregistrée pour le moment. Utilise 🔖 Enregistrer sous une publication.</p>';return;}
+  const {data,error}=await db.from("posts").select("*,profiles:profiles!posts_author_id_fkey(first_name,last_name,avatar_url)").in("id",ids).order("created_at",{ascending:false});
+  if(error){box.textContent=error.message;return;}
+  if(!data?.length){box.innerHTML='<p class="om-note">Les publications enregistrées ne sont plus disponibles.</p>';return;}
+  const reactions=await db.from("post_reactions").select("post_id,user_id").in("post_id",ids);
+  const comments=await db.from("post_comments").select("post_id").in("post_id",ids);
+  data.forEach(p=>{const card=postCard(p,(reactions.data||[]).filter(x=>x.post_id===p.id).length,(reactions.data||[]).some(x=>x.post_id===p.id&&x.user_id===user.id),(comments.data||[]).filter(x=>x.post_id===p.id).length);if(card)box.appendChild(card);});
+}
+async function openMemories(){
+  const w=modal("Souvenirs",'<div id="omMemories"><p class="om-note">Recherche de tes anciennes publications…</p></div>');
+  const box=w.querySelector("#omMemories"),today=new Date(),month=today.getMonth(),day=today.getDate();
+  const {data,error}=await db.from("posts").select("*,profiles:profiles!posts_author_id_fkey(first_name,last_name,avatar_url)").eq("author_id",user.id).lt("created_at",new Date(today.getFullYear(),month,day).toISOString()).order("created_at",{ascending:false}).limit(200);
+  if(error){box.textContent=error.message;return;}
+  const matches=(data||[]).filter(p=>{const d=new Date(p.created_at);return d.getMonth()===month&&d.getDate()===day&&d.getFullYear()<today.getFullYear();});
+  if(!matches.length){box.innerHTML='<p class="om-note">Pas encore de souvenir publié à cette date les années précédentes. Reviens plus tard !</p>';return;}
+  matches.forEach(p=>{const card=postCard(p,0,false,0);if(card){const note=document.createElement("p");note.className="om-note";note.textContent="Souvenir du "+new Date(p.created_at).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});card.prepend(note);box.appendChild(card);}});
 }
 async function renderComments(postId,box,onCount){
   box.innerHTML='<p class="om-note">Chargement…</p>';
@@ -308,5 +333,6 @@ document.querySelectorAll("[data-nav='status'],[data-goto='status']").forEach(b=
 let bound=false, initializedUserId=null;
 async function initForUser(nextUser){if(!nextUser||initializedUserId===nextUser.id)return;user=nextUser;initializedUserId=nextUser.id;if(!bound){bind();bindStickerPicker();bound=true;}await refreshProfile();await Promise.allSettled([loadFeed(),loadStories(),loadStatuses(),loadFriends(),loadChats()]);startGlobalChannel();loadNotifBadge();}
 async function boot(){try{db=await ready;db.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){user=null;initializedUserId=null;active=null;if(channel)db.removeChannel(channel);if(globalCh){db.removeChannel(globalCh);globalCh=null;}profCache.clear();presence=new Set();return;}if((event==="SIGNED_IN"||event==="INITIAL_SESSION"||event==="TOKEN_REFRESHED")&&session?.user){setTimeout(()=>initForUser(session.user).catch(e=>{console.warn("OMEGIA:",e);toast("Services sociaux : "+e.message);}),0);}});const {data:{session}}=await db.auth.getSession();if(session?.user)await initForUser(session.user);}catch(e){console.warn("OMEGIA:",e);toast("Services sociaux : "+e.message);}}
+window.omegiaSocial={openSavedPosts,openMemories};
 window.addEventListener("load",()=>setTimeout(boot,300));
 })();
