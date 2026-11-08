@@ -2,6 +2,8 @@
 const $ = (id) => document.getElementById(id);
 const SUPABASE_URL = "https://nyiievcbciqxvxmerwdm.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_4ZW9RA9gktscWSW2tuEttw_yRNdnduw";
+// URL publique unique utilisée pour les retours d’authentification sur le web et l’APK.
+const OMEGIA_PUBLIC_URL = "https://lokononbeno.gitlab.io/omegia-social/";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_AGE = 13;
 
@@ -749,7 +751,7 @@ $("forgotLink").addEventListener("click", async (event) => {
   try {
     const client = await supabaseReady;
     const { error } = await client.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + window.location.pathname
+      redirectTo: OMEGIA_PUBLIC_URL
     });
     if (error) throw error;
     setMessage("formMessage", "Si un compte existe pour cette adresse, un e-mail de récupération vient d'être envoyé. Vérifiez aussi vos courriers indésirables.");
@@ -804,7 +806,7 @@ $("signupForm").addEventListener("submit", async (event) => {
       password,
       options: {
         data: { first_name: firstName, last_name: lastName, birthdate },
-        emailRedirectTo: window.location.origin + window.location.pathname
+        emailRedirectTo: OMEGIA_PUBLIC_URL
       }
     });
     if (error) throw error;
