@@ -70,3 +70,4 @@ if (process.env.ANDROID_KEYSTORE_BASE64 && fs.existsSync(gradleFile)) {
     signedGradle = signedGradle.replace(/buildTypes\s*\{/, `buildTypes {\n        debug {\n            signingConfig signingConfigs.omegia\n        }`);
     fs.writeFileSync(gradleFile, signedGradle);
   }
+}
