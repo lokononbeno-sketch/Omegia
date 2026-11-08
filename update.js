@@ -1,6 +1,6 @@
 (() => {
-  const VERSION_URL="https://gitlab.com/lokononbeno/omegia-social/-/raw/main/version.json";
-  const CURRENT_VERSION="1.0.5";
+  const VERSION_URLS=["https://gitlab.com/api/v4/projects/88621748/repository/files/version.json/raw?ref=main","https://omegia.netlify.app/version.json","https://gitlab.com/lokononbeno/omegia-social/-/raw/main/version.json"];
+  const CURRENT_VERSION="1.0.6";
   const APK_URL="https://gitlab.com/api/v4/projects/88621748/jobs/artifacts/main/raw/dist/OMEGIA.apk?job=android-apk";
   const style=document.createElement("style");
   style.textContent="#om-update-chip{position:fixed;right:14px;bottom:calc(82px + env(safe-area-inset-bottom,0px));z-index:9998;border:0;border-radius:999px;padding:11px 15px;background:#7652d6;color:#fff;font-weight:700;box-shadow:0 5px 22px #0003}#om-update-panel{position:fixed;inset:0;z-index:9999;background:#090711bb;display:grid;place-items:center;padding:20px}#om-update-card{width:min(100%,380px);background:#fff;color:#211b30;border-radius:20px;padding:22px;box-shadow:0 18px 60px #0005;font:15px system-ui}#om-update-card h3{margin:0 0 8px;font-size:20px}#om-update-card p{line-height:1.5}#om-update-card button{border:0;border-radius:12px;padding:12px 15px;font-weight:700;margin:5px 5px 0 0}#om-update-install{background:#7652d6;color:white}#om-update-later{background:#eeeaf5;color:#302743}";
@@ -16,15 +16,15 @@
   async function check(silent=false){
     chip.disabled=true;chip.textContent="Vérification…";
     try{
-      const response=await fetch(VERSION_URL+"?t="+Date.now(),{cache:"no-store",headers:{Accept:"application/json"}});
-      if(!response.ok)throw new Error("Le serveur a répondu "+response.status+".");
-      const latest=await response.json();if(!latest.version)throw new Error("Numéro de version absent.");
+      let latest=null,lastErr=null;
+      for(const u of VERSION_URLS){try{const response=await fetch(u+(u.includes("?")?"&":"?")+"t="+Date.now(),{cache:"no-store"});if(!response.ok)throw new Error("Le serveur a répondu "+response.status+".");latest=await response.json();break;}catch(e){lastErr=e;}}
+      if(!latest)throw lastErr||new Error("Serveur injoignable.");if(!latest.version)throw new Error("Numéro de version absent.");
       const newer=String(latest.version).localeCompare(CURRENT_VERSION,undefined,{numeric:true,sensitivity:"base"})>0;
       if(newer){open("La version "+latest.version+" est disponible. Télécharge l’APK, ouvre le fichier puis confirme l’installation Android.",true);chip.textContent="Mise à jour disponible";}
       else{chip.textContent="Application à jour";if(!silent)open("Tu utilises déjà la version "+CURRENT_VERSION+". Aucune mise à jour plus récente n’est publiée.",false);}
     }catch(error){
       chip.textContent="Télécharger l’APK";
-      if(!silent)open("La vérification automatique a échoué ("+(error.message||"connexion indisponible")+"). Tu peux tout de même télécharger la dernière APK publiée sur GitLab.",true);
+      if(!silent)open("Je n’arrive pas à lire le numéro de la dernière version (réseau ou serveur de mises à jour injoignable : "+(error.message||"connexion indisponible")+"). Tu peux tout de même télécharger la dernière APK publiée sur GitLab.",true);
     }finally{chip.disabled=false;}
   }
   chip.addEventListener("click",()=>check(false));

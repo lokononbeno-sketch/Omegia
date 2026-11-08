@@ -45,8 +45,8 @@ if (fs.existsSync(anydpi)) {
 const gradleFile = path.join(root, "android/app/build.gradle");
 if (fs.existsSync(gradleFile)) {
   let gradle = fs.readFileSync(gradleFile, "utf8");
-  gradle = gradle.replace(/versionCode\s+1\b/, "versionCode 6");
-  gradle = gradle.replace(/versionName\s+"[^"]+"/, 'versionName "1.0.5"');
+  gradle = gradle.replace(/versionCode\s+1\b/, "versionCode 7");
+  gradle = gradle.replace(/versionName\s+"[^"]+"/, 'versionName "1.0.6"');
   fs.writeFileSync(gradleFile, gradle);
 }
 
