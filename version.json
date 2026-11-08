@@ -1,6 +1,6 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "name": "OMEGIA",
   "apk": "https://gitlab.com/api/v4/projects/88621748/jobs/artifacts/main/raw/dist/OMEGIA.apk?job=android-apk",
-  "notes": "Ajout du vérificateur de mises à jour intégré."
+  "notes": "Réactions, commentaires et partage des publications améliorés ; mises à jour Android fiabilisées."
 }

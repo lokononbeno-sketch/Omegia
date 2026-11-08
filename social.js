@@ -60,43 +60,70 @@ function setBadge(id,n){const el=$(id);if(!el)return;el.hidden=!n;el.textContent
 function userRow(p,actions=[],sub=""){const el=document.createElement("div");el.className="om-user";el.innerHTML=av(p)+'<div class="om-grow"><strong>'+esc(name(p))+'</strong>'+(sub?'<div class="om-note">'+esc(sub)+'</div>':'')+'</div>';actions.forEach(([label,fn,secondary])=>{const b=document.createElement("button");b.type="button";b.textContent=label;if(secondary)b.className="om-cancel";b.onclick=async()=>{b.disabled=true;try{await fn();}finally{b.disabled=false;}};el.appendChild(b);});return el;}
 const groupByAuthor=list=>{const m=new Map();list.forEach(x=>{if(!m.has(x.author_id))m.set(x.author_id,[]);m.get(x.author_id).push(x);});return [...m.values()];};
 
-/* ---------- Fil d'actualité : j'aime, commentaires, suppression ---------- */
+/* ---------- Fil d'actualité : réactions, commentaires et partage ---------- */
+const POST_REACTIONS = {
+  like:{emoji:"👍",label:"J’aime"},love:{emoji:"❤️",label:"J’adore"},
+  haha:{emoji:"😂",label:"Haha"},wow:{emoji:"😮",label:"Waouh"},
+  sad:{emoji:"😢",label:"Triste"},angry:{emoji:"😡",label:"Grr"}
+};
 async function loadFeed(){
   const box=$("feed");if(!box||!user)return;
   const {data:posts,error}=await db.from("posts").select("*,profiles:profiles!posts_author_id_fkey(first_name,last_name,avatar_url)").order("created_at",{ascending:false}).limit(40);
   if(error){toast("Fil : "+error.message);return;}
-  const ids=(posts||[]).map(p=>p.id);
-  let rx=[],cm=[];
-  if(ids.length){const [r,c]=await Promise.all([db.from("post_reactions").select("post_id,user_id").in("post_id",ids),db.from("post_comments").select("post_id").in("post_id",ids)]);rx=r.data||[];cm=c.data||[];}
-  const likes={},mine=new Set(),comments={};
-  rx.forEach(r=>{likes[r.post_id]=(likes[r.post_id]||0)+1;if(r.user_id===user.id)mine.add(r.post_id);});
-  cm.forEach(c=>{comments[c.post_id]=(comments[c.post_id]||0)+1;});
+  const ids=(posts||[]).map(p=>p.id);let rx=[],cm=[];
+  if(ids.length){
+    const [r,c]=await Promise.all([
+      db.from("post_reactions").select("post_id,user_id,reaction").in("post_id",ids),
+      db.from("post_comments").select("post_id").in("post_id",ids)
+    ]);
+    if(r.error)toast("Réactions : "+r.error.message);
+    if(c.error)toast("Commentaires : "+c.error.message);
+    rx=r.data||[];cm=c.data||[];
+  }
   box.innerHTML="";
   if(!posts?.length){box.innerHTML='<div class="empty-state"><p>Ton fil est vide pour le moment.</p><p class="om-note">Publie quelque chose ou invite des amis.</p></div>';return;}
-  posts.forEach(p=>box.appendChild(postCard(p,likes[p.id]||0,mine.has(p.id),comments[p.id]||0)));
+  posts.forEach(p=>box.appendChild(postCard(p,rx.filter(r=>r.post_id===p.id),cm.filter(c=>c.post_id===p.id).length)));
 }
-function postCard(p,nLikes,liked,nComments){
+function postCard(p,reactionRows,nComments){
   const el=document.createElement("article");el.className="om-post";el.dataset.post=p.id;
-  const own=p.author_id===user.id;
+  const own=p.author_id===user.id,counts={};Object.keys(POST_REACTIONS).forEach(k=>counts[k]=0);
+  reactionRows.forEach(r=>{if(counts[r.reaction]!==undefined)counts[r.reaction]++;});
+  let mine=(reactionRows.find(r=>r.user_id===user.id)||{}).reaction||null;
   el.innerHTML='<div class="om-post-head">'+av(p.profiles)+'<div class="om-grow"><strong>'+esc(name(p.profiles))+'</strong><div class="om-note">'+timeAgo(p.created_at)+' · '+(p.visibility==="public"?"🌐 Public":"👥 Amis")+'</div></div>'+(own?'<button type="button" class="om-ghost" data-del aria-label="Supprimer la publication">🗑</button>':'')+'</div>'
     +(p.body?'<div class="om-post-body">'+esc(p.body)+'</div>':'')+media(p.media_url,p.media_type)
     +'<div class="om-counts om-note"><span data-nl></span><span data-nc></span></div>'
-    +'<div class="om-feed-actions"><button type="button" data-like>👍 J’aime</button><button type="button" data-toggle>💬 Commenter</button><button type="button" data-save aria-pressed="false">🔖 Enregistrer</button></div><div class="om-comments" hidden></div>';
-  let l=nLikes,on=liked,c=nComments;
-  const paint=()=>{el.querySelector("[data-nl]").textContent=l?"👍 "+l:"";el.querySelector("[data-nc]").textContent=c?c+" commentaire"+(c>1?"s":""):"";const b=el.querySelector("[data-like]");b.classList.toggle("on",on);b.setAttribute("aria-pressed",String(on));};
+    +'<div class="om-feed-actions om-reaction-actions">'+Object.keys(POST_REACTIONS).map(k=>'<button type="button" data-react="'+k+'" title="'+POST_REACTIONS[k].label+'" aria-label="'+POST_REACTIONS[k].label+'">'+POST_REACTIONS[k].emoji+'</button>').join("")+'</div>'
+    +'<div class="om-feed-actions om-post-tools"><button type="button" data-toggle>💬 Commenter</button><button type="button" data-share>↗ Partager</button><button type="button" data-save aria-pressed="false">🔖 Enregistrer</button></div><div class="om-comments" hidden></div>';
+  const cbox=el.querySelector(".om-comments");
+  const paint=()=>{
+    el.querySelector("[data-nl]").textContent=Object.keys(POST_REACTIONS).filter(k=>counts[k]>0).map(k=>POST_REACTIONS[k].emoji+" "+counts[k]).join("  ");
+    el.querySelector("[data-nc]").textContent=nComments?nComments+" commentaire"+(nComments>1?"s"):"";
+    el.querySelectorAll("[data-react]").forEach(b=>{const yes=b.dataset.react===mine;b.classList.toggle("on",yes);b.setAttribute("aria-pressed",String(yes));b.title=POST_REACTIONS[b.dataset.react].label+(counts[b.dataset.react]?" · "+counts[b.dataset.react]:"");});
+  };
   paint();
-  el.querySelector("[data-like]").onclick=async()=>{
-    const was=on;on=!was;l+=was?-1:1;paint();
-    const {error}=was?await db.from("post_reactions").delete().eq("post_id",p.id).eq("user_id",user.id):await db.from("post_reactions").upsert({post_id:p.id,user_id:user.id,reaction:"like"},{onConflict:"post_id,user_id"});
-    if(error){on=was;l+=was?1:-1;paint();toast(error.message);}
+  el.querySelectorAll("[data-react]").forEach(btn=>btn.onclick=async()=>{
+    const next=btn.dataset.react,old=mine,oldCounts={...counts};
+    if(old===next){mine=null;counts[next]=Math.max(0,counts[next]-1);}
+    else{if(old)counts[old]=Math.max(0,counts[old]-1);mine=next;counts[next]++;}
+    paint();btn.disabled=true;
+    const result=mine?await db.from("post_reactions").upsert({post_id:p.id,user_id:user.id,reaction:mine},{onConflict:"post_id,user_id"}):await db.from("post_reactions").delete().eq("post_id",p.id).eq("user_id",user.id);
+    btn.disabled=false;
+    if(result.error){mine=old;Object.keys(counts).forEach(k=>counts[k]=oldCounts[k]);paint();toast("Réaction impossible : "+result.error.message);}
+  });
+  el.querySelector("[data-toggle]").onclick=async()=>{cbox.hidden=!cbox.hidden;if(!cbox.hidden)await renderComments(p.id,cbox,n=>{nComments=n;paint();});};
+  el.querySelector("[data-share]").onclick=async()=>{
+    const shareText=(p.body||"Découvre cette publication sur OMEGIA").slice(0,500);
+    try{
+      if(navigator.share)await navigator.share({title:"Publication OMEGIA",text:shareText,url:location.href});
+      else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(shareText+"\n"+location.href);toast("Texte et lien copiés. Tu peux les partager.");}
+      else window.prompt("Copie ce texte pour le partager :",shareText+"\n"+location.href);
+    }catch(e){if(e?.name!=="AbortError")toast("Partage indisponible : "+(e.message||"réessaie."));}
   };
   const savedPostIds=()=>{try{return JSON.parse(localStorage.getItem("omegia.saved."+user.id)||"[]");}catch{return [];}};
   const saveBtn=el.querySelector("[data-save]");
   const paintSaved=()=>{const yes=savedPostIds().includes(p.id);saveBtn.textContent=yes?"🔖 Enregistré":"🔖 Enregistrer";saveBtn.setAttribute("aria-pressed",String(yes));saveBtn.classList.toggle("on",yes);};
   paintSaved();
-  saveBtn.onclick=()=>{const ids=savedPostIds(),yes=ids.includes(p.id);const next=yes?ids.filter(id=>id!==p.id):[...ids,p.id];try{localStorage.setItem("omegia.saved."+user.id,JSON.stringify(next));paintSaved();toast(yes?"Publication retirée des enregistrements.":"Publication enregistrée sur cet appareil.");}catch(e){toast("Impossible d’enregistrer sur cet appareil.");}};
-  const cbox=el.querySelector(".om-comments");
-  el.querySelector("[data-toggle]").onclick=async()=>{cbox.hidden=!cbox.hidden;if(!cbox.hidden)await renderComments(p.id,cbox,n=>{c=n;paint();});};
+  saveBtn.onclick=()=>{const ids=savedPostIds(),yes=ids.includes(p.id),next=yes?ids.filter(id=>id!==p.id):[...ids,p.id];try{localStorage.setItem("omegia.saved."+user.id,JSON.stringify(next));paintSaved();toast(yes?"Publication retirée des enregistrements.":"Publication enregistrée sur cet appareil.");}catch(e){toast("Impossible d’enregistrer sur cet appareil.");}};
   el.querySelector("[data-del]")?.addEventListener("click",async()=>{if(!confirm("Supprimer cette publication ?"))return;const {error}=await db.from("posts").delete().eq("id",p.id);if(error)return toast(error.message);el.remove();toast("Publication supprimée.");});
   return el;
 }
@@ -107,9 +134,9 @@ async function openSavedPosts(){
   const {data,error}=await db.from("posts").select("*,profiles:profiles!posts_author_id_fkey(first_name,last_name,avatar_url)").in("id",ids).order("created_at",{ascending:false});
   if(error){box.textContent=error.message;return;}
   if(!data?.length){box.innerHTML='<p class="om-note">Les publications enregistrées ne sont plus disponibles.</p>';return;}
-  const reactions=await db.from("post_reactions").select("post_id,user_id").in("post_id",ids);
+  const reactions=await db.from("post_reactions").select("post_id,user_id,reaction").in("post_id",ids);
   const comments=await db.from("post_comments").select("post_id").in("post_id",ids);
-  data.forEach(p=>{const card=postCard(p,(reactions.data||[]).filter(x=>x.post_id===p.id).length,(reactions.data||[]).some(x=>x.post_id===p.id&&x.user_id===user.id),(comments.data||[]).filter(x=>x.post_id===p.id).length);if(card)box.appendChild(card);});
+  data.forEach(p=>{const card=postCard(p,(reactions.data||[]).filter(x=>x.post_id===p.id),(comments.data||[]).filter(x=>x.post_id===p.id).length);if(card)box.appendChild(card);});
 }
 async function openMemories(){
   const w=modal("Souvenirs",'<div id="omMemories"><p class="om-note">Recherche de tes anciennes publications…</p></div>');
@@ -118,7 +145,7 @@ async function openMemories(){
   if(error){box.textContent=error.message;return;}
   const matches=(data||[]).filter(p=>{const d=new Date(p.created_at);return d.getMonth()===month&&d.getDate()===day&&d.getFullYear()<today.getFullYear();});
   if(!matches.length){box.innerHTML='<p class="om-note">Pas encore de souvenir publié à cette date les années précédentes. Reviens plus tard !</p>';return;}
-  matches.forEach(p=>{const card=postCard(p,0,false,0);if(card){const note=document.createElement("p");note.className="om-note";note.textContent="Souvenir du "+new Date(p.created_at).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});card.prepend(note);box.appendChild(card);}});
+  matches.forEach(p=>{const card=postCard(p,[],0);if(card){const note=document.createElement("p");note.className="om-note";note.textContent="Souvenir du "+new Date(p.created_at).toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});card.prepend(note);box.appendChild(card);}});
 }
 async function renderComments(postId,box,onCount){
   box.innerHTML='<p class="om-note">Chargement…</p>';
