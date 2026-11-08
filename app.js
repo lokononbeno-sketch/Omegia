@@ -306,6 +306,12 @@ const settingMessages = {
 document.querySelectorAll("[data-setting]").forEach((btn) => {
   btn.addEventListener("click", () => {
     const s = btn.dataset.setting;
+    if (s === "saved" || s === "memories") {
+      $("sideMenu").hidden = true;
+      if (window.omegiaSocial) (s === "saved" ? window.omegiaSocial.openSavedPosts() : window.omegiaSocial.openMemories());
+      else alert("Le module social est en cours de chargement. Réessaie dans un instant.");
+      return;
+    }
     if (s === "privacy" || s === "notifications" || s === "account") {
       $("sideMenu").hidden = true;
       showView("settings");
