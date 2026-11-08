@@ -1,4 +1,8 @@
--- OMEGIA — Schéma initial des fonctionnalités sociales
+-- FICHIER OBSOLÈTE : il recréait des règles de sécurité trop permissives (auto-acceptation d'invitation,
+-- ajout libre aux conversations). Utiliser supabase/schema.sql, puis features.sql et features_securite.sql.
+do $$ begin raise exception 'setup_all.sql est obsolète : utiliser supabase/schema.sql'; end $$;
+
+-- OMEGIA — Schéma initial des fonctionnalités sociales (ANCIEN)
 -- À exécuter une seule fois dans Supabase > SQL Editor.
 -- Les données privées sont protégées par Row Level Security.
 
