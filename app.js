@@ -653,7 +653,19 @@ function readBio() {
 function writeBio(value) {
   try { if (value) localStorage.setItem(BIO_KEY, JSON.stringify(value)); else localStorage.removeItem(BIO_KEY); } catch {}
 }
+// Dans l'APK Android, la WebView ne gère pas WebAuthn : on utilise le capteur natif (plugin NativeBiometric).
+const nativeBio = () => (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.NativeBiometric) || null;
+async function nativeVerify(reason) {
+  const plugin = nativeBio();
+  try {
+    await plugin.verifyIdentity({ reason, title: "OMEGIA", subtitle: reason, description: "Utilise ton empreinte ou ton visage", maxAttempts: 3, useFallback: true });
+  } catch { throw new Error("Vérification biométrique annulée ou refusée."); }
+}
 async function biometricSupported() {
+  const plugin = nativeBio();
+  if (plugin) {
+    try { const r = await plugin.isAvailable({ useFallback: true }); return Boolean(r && r.isAvailable); } catch { return false; }
+  }
   try {
     return Boolean(window.isSecureContext && window.PublicKeyCredential &&
       await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
@@ -674,6 +686,11 @@ async function refreshBioButton() {
   button.textContent = enabled ? "Désactiver l'empreinte ou le visage" : "Activer l'empreinte ou le visage";
 }
 async function enableBiometric() {
+  if (nativeBio()) {
+    await nativeVerify("Activer le déverrouillage");
+    writeBio({ userId: currentUser.id, credentialId: "native-" + b64u.enc(crypto.getRandomValues(new Uint8Array(16))) });
+    return;
+  }
   const credential = await navigator.credentials.create({
     publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
@@ -689,6 +706,10 @@ async function enableBiometric() {
 }
 // Crée une clé d'empreinte/visage stockée sur l'appareil (jamais envoyée à OMEGIA) et renvoie son identifiant.
 async function createBiometricCredential(label) {
+  if (nativeBio()) {
+    await nativeVerify("Créer ton compte");
+    return "native-" + b64u.enc(crypto.getRandomValues(new Uint8Array(16)));
+  }
   const credential = await navigator.credentials.create({
     publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
@@ -767,6 +788,11 @@ function offerResend(email) {
 async function verifyBiometric() {
   const bio = readBio();
   if (!bio) throw new Error("Le déverrouillage biométrique n'est pas activé.");
+  if (String(bio.credentialId).startsWith("native-")) {
+    if (!nativeBio()) throw new Error("Cette clé a été créée dans l'application Android.");
+    await nativeVerify("Déverrouiller OMEGIA");
+    return;
+  }
   const challenge = crypto.getRandomValues(new Uint8Array(32));
   const assertion = await navigator.credentials.get({
     publicKey: {

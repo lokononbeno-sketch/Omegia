@@ -45,3 +45,4 @@ android-apk:
     expire_in: 30 days
   only:
     - main
+    - /^fix\/apk-.*$/
