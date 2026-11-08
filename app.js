@@ -910,6 +910,13 @@ $("signupForm").addEventListener("submit", async (event) => {
   }
 });
 
+// ---------- Accès aux comptes e-mail existants (lien discret) ----------
+$("showEmailLogin")?.addEventListener("click", () => {
+  const form = $("loginForm");
+  if (form) { form.hidden = false; form.style.display = ""; $("email")?.focus(); }
+  $("showEmailLogin").style.display = "none";
+});
+
 // ---------- Inscription par empreinte / visage (sans e-mail) ----------
 const bioDialog = $("bioSignupDialog");
 function openBioSignup() {
