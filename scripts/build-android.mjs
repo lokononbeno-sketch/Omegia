@@ -8,7 +8,7 @@ const webDir = path.join(root, "www");
 fs.rmSync(webDir, { recursive: true, force: true });
 fs.mkdirSync(webDir, { recursive: true });
 
-for (const file of ["index.html", "app.js", "social.js", "styles.css", "manifest.webmanifest", "sw.js", "update.js", "version.json"]) {
+for (const file of ["index.html", "app.js", "social.js", "styles.css", "manifest.webmanifest", "sw.js", "update.js", "version.json", "features.js"]) {
   fs.copyFileSync(path.join(root, file), path.join(webDir, file));
 }
 if (fs.existsSync(path.join(root, "assets"))) {
@@ -45,7 +45,17 @@ if (fs.existsSync(anydpi)) {
 const gradleFile = path.join(root, "android/app/build.gradle");
 if (fs.existsSync(gradleFile)) {
   let gradle = fs.readFileSync(gradleFile, "utf8");
-  gradle = gradle.replace(/versionCode\s+1\b/, "versionCode 3");
-  gradle = gradle.replace(/versionName\s+"[^"]+"/, 'versionName "1.0.2"');
+  gradle = gradle.replace(/versionCode\s+1\b/, "versionCode 4");
+  gradle = gradle.replace(/versionName\s+"[^"]+"/, 'versionName "1.0.3"');
   fs.writeFileSync(gradleFile, gradle);
+}
+
+// Autorisations nécessaires aux appels, notes vocales et caméra dans la WebView Android.
+const manifestFile = path.join(root, "android/app/src/main/AndroidManifest.xml");
+if (fs.existsSync(manifestFile)) {
+  let manifest = fs.readFileSync(manifestFile, "utf8");
+  const perms = ["android.permission.RECORD_AUDIO", "android.permission.CAMERA", "android.permission.MODIFY_AUDIO_SETTINGS"];
+  const add = perms.filter((p) => !manifest.includes(p)).map((p) => `    <uses-permission android:name="${p}" />`).join("\n");
+  if (add) manifest = manifest.replace("</manifest>", add + "\n</manifest>");
+  fs.writeFileSync(manifestFile, manifest);
 }
