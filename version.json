@@ -1,5 +1,5 @@
 {
-  "version": "1.0.5",
+  "version": "1.0.6",
   "name": "OMEGIA",
   "apk": "https://gitlab.com/api/v4/projects/88621748/jobs/artifacts/main/raw/dist/OMEGIA.apk?job=android-apk",
   "notes": "Confidentialité appliquée (profil verrouillé, stories et messages entre amis, recherche), réglages synchronisés sur le compte, appels audio/vidéo."
