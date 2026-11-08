@@ -44,4 +44,4 @@ android-apk:
       - dist/OMEGIA.apk
     expire_in: 30 days
   only:
-    - main
+    - branches

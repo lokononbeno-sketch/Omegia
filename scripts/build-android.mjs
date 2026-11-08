@@ -18,6 +18,18 @@ if (fs.existsSync(path.join(root, "assets"))) {
 execFileSync("npx", ["cap", "add", "android"], { stdio: "inherit" });
 execFileSync("npx", ["cap", "sync", "android"], { stdio: "inherit" });
 
+// Augmente le délai de téléchargement du wrapper Gradle pour les runners CI lents.
+const wrapperProps = path.join(root, "android/gradle/wrapper/gradle-wrapper.properties");
+if (fs.existsSync(wrapperProps)) {
+  let props = fs.readFileSync(wrapperProps, "utf8");
+  if (/^networkTimeout=/m.test(props)) {
+    props = props.replace(/^networkTimeout=.*$/m, "networkTimeout=120000");
+  } else {
+    props = props.replace(/^(distributionUrl=.*)$/m, "networkTimeout=120000\\n$1");
+  }
+  fs.writeFileSync(wrapperProps, props);
+}
+
 const res = path.join(root, "android/app/src/main/res");
 const iconSvg = path.join(root, "assets/omega.svg");
 const legacy = {

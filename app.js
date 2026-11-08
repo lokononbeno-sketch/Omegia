@@ -910,50 +910,6 @@ $("signupForm").addEventListener("submit", async (event) => {
   }
 });
 
-// ---------- Cloudflare Turnstile (CAPTCHA exigé par Supabase) ----------
-const TURNSTILE_SITE_KEY = "0x4AAAAAAF4kQ0HrmQ_iNS--";
-let bioCaptchaToken = "";
-let bioCaptchaWidget = null;
-let turnstilePromise = null;
-function loadTurnstile() {
-  if (window.turnstile) return Promise.resolve(window.turnstile);
-  if (!turnstilePromise) {
-    turnstilePromise = new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-      s.async = true;
-      s.onload = () => (window.turnstile ? resolve(window.turnstile) : reject(new Error("turnstile")));
-      s.onerror = () => reject(new Error("turnstile"));
-      document.head.appendChild(s);
-    });
-    turnstilePromise.catch(() => { turnstilePromise = null; });
-  }
-  return turnstilePromise;
-}
-async function renderBioCaptcha() {
-  const box = $("bioCaptcha");
-  if (!box) return;
-  try {
-    const ts = await loadTurnstile();
-    if (bioCaptchaWidget !== null) { bioCaptchaToken = ""; ts.reset(bioCaptchaWidget); return; }
-    bioCaptchaWidget = ts.render(box, {
-      sitekey: TURNSTILE_SITE_KEY,
-      callback: (token) => { bioCaptchaToken = token; },
-      "expired-callback": () => { bioCaptchaToken = ""; },
-      "error-callback": () => {
-        bioCaptchaToken = "";
-        setMessage("bioSignupMessage", "La vérification de sécurité a échoué (connexion, clé ou domaine non autorisé ?). Rouvrez cette fenêtre pour réessayer.", true);
-      }
-    });
-  } catch {
-    setMessage("bioSignupMessage", "La vérification de sécurité ne se charge pas. Vérifiez votre connexion Internet.", true);
-  }
-}
-function resetBioCaptcha() {
-  bioCaptchaToken = "";
-  if (window.turnstile && bioCaptchaWidget !== null) window.turnstile.reset(bioCaptchaWidget);
-}
-
 // ---------- Inscription par empreinte / visage (sans e-mail) ----------
 const bioDialog = $("bioSignupDialog");
 function openBioSignup() {
@@ -961,7 +917,6 @@ function openBioSignup() {
   closeSignup();
   if (typeof bioDialog.showModal === "function") bioDialog.showModal();
   else bioDialog.setAttribute("open", "");
-  renderBioCaptcha();
   $("bioFirstName").focus();
 }
 function closeBioSignup() {
@@ -988,7 +943,6 @@ if (bioDialog) {
     if (age === null || age < 0 || age > 120) { fail("Veuillez saisir une date de naissance valide."); return; }
     if (age < MIN_AGE) { fail("Vous devez avoir au moins " + MIN_AGE + " ans pour créer un compte."); return; }
     if (!$("bioAgree").checked) { fail("Cochez la case pour confirmer que vous avez compris."); return; }
-    if (!bioCaptchaToken) { fail("Validez d'abord la vérification de sécurité ci-dessus (ou rouvrez cette fenêtre si elle n'apparaît pas)."); return; }
     if (!(await biometricSupported())) { fail("Cet appareil ne propose pas l'empreinte ou le visage dans ce navigateur."); return; }
 
     button.disabled = true;
@@ -1001,7 +955,7 @@ if (bioDialog) {
       // 2) compte Supabase sans e-mail (connexion anonyme), avec nom, prénom et date de naissance.
       const client = await supabaseReady;
       const { data, error } = await client.auth.signInAnonymously({
-        options: { captchaToken: bioCaptchaToken, data: { first_name: firstName, last_name: lastName, birthdate, signup_method: "biometric" } }
+        options: { data: { first_name: firstName, last_name: lastName, birthdate, signup_method: "biometric" } }
       });
       if (error) throw error;
       currentUser = data.user;
@@ -1015,7 +969,6 @@ if (bioDialog) {
     } finally {
       button.disabled = false;
       button.textContent = "Continuer avec l'empreinte ou le visage";
-      resetBioCaptcha();
     }
   });
 }
