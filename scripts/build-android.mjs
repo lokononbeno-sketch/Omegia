@@ -59,3 +59,15 @@ if (fs.existsSync(manifestFile)) {
   if (add) manifest = manifest.replace("</manifest>", add + "\n</manifest>");
   fs.writeFileSync(manifestFile, manifest);
 }
+
+// Signature fixe de l'APK : active seulement si les variables GitLab ANDROID_KEYSTORE_* sont définies.
+// Sans elle, chaque build est signé avec une clé aléatoire et Android refuse la mise à jour par-dessus l'APK installé.
+if (process.env.ANDROID_KEYSTORE_BASE64 && fs.existsSync(gradleFile)) {
+  fs.writeFileSync(path.join(root, "android/omegia.keystore"), Buffer.from(process.env.ANDROID_KEYSTORE_BASE64, "base64"));
+  let signedGradle = fs.readFileSync(gradleFile, "utf8");
+  if (!signedGradle.includes("signingConfigs.omegia")) {
+    signedGradle = signedGradle.replace(/android\s*\{/, `android {\n    signingConfigs {\n        omegia {\n            storeFile file("../omegia.keystore")\n            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")\n            keyAlias System.getenv("ANDROID_KEY_ALIAS")\n            keyPassword System.getenv("ANDROID_KEYSTORE_PASSWORD")\n        }\n    }`);
+    signedGradle = signedGradle.replace(/buildTypes\s*\{/, `buildTypes {\n        debug {\n            signingConfig signingConfigs.omegia\n        }`);
+    fs.writeFileSync(gradleFile, signedGradle);
+  }
+}
