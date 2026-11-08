@@ -382,6 +382,6 @@ async function openCommunityModule(kind){
  };
  await refresh();
 }
-\nwindow.omegiaSocial={openSavedPosts,openMemories,openCommunityModule};
+window.omegiaSocial={openSavedPosts,openMemories,openCommunityModule};
 window.addEventListener("load",()=>setTimeout(boot,300));
 })();
