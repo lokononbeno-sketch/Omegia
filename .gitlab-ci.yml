@@ -9,7 +9,7 @@ javascript-syntax:
   image: node:22-alpine
   script:
     - node --check app.js
-    - node --check social.js
+    - node --check social.js\n    - node --check update.js
   rules:
     - if: '$CI_COMMIT_BRANCH'
 
