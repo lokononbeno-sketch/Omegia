@@ -82,7 +82,7 @@ function pickMember(title,cb){
   const w=S().modal(title,'<input id="om2q" placeholder="Nom ou nom d’utilisateur"><div id="om2r"></div>');let t;
   w.querySelector("#om2q").oninput=e=>{clearTimeout(t);t=setTimeout(async()=>{
     const q=e.target.value.replace(/[,()%*\\]/g," ").trim(),box=w.querySelector("#om2r");if(q.length<2){box.innerHTML="";return;}
-    const {data,error}=await db().from("profiles").select("id,first_name,last_name,username,avatar_url").or("first_name.ilike.%"+q+"%,last_name.ilike.%"+q+"%,username.ilike.%"+q+"%").neq("id",me().id).limit(15);
+    const {data,error}=await db().rpc("omegia_search_members",{q});
     if(error){box.textContent=error.message;return;}box.innerHTML="";
     (data||[]).forEach(p=>{const el=document.createElement("div");el.className="om-user";el.innerHTML=av(p)+'<div class="om-grow"><strong>'+esc(nm(p))+'</strong><div class="om-note">@'+esc(p.username||"membre")+"</div></div>";
       const b=document.createElement("button");b.type="button";b.textContent="Choisir";b.onclick=()=>{w.remove();cb(p);};el.appendChild(b);box.appendChild(el);});
@@ -102,7 +102,9 @@ function composer(ph,fn){
 const PK="omegia.prefs";let prefs={};try{prefs=JSON.parse(localStorage.getItem(PK)||"{}");}catch{}
 const applyPrefs=()=>{window.omegiaHideOnline=!!prefs.hideOnline;document.documentElement.lang=prefs.lang||"fr";};
 applyPrefs();
-function setPref(k,v){prefs={...prefs,[k]:v};try{localStorage.setItem(PK,JSON.stringify(prefs));}catch{}applyPrefs();if(db()&&me())db().auth.updateUser({data:{settings:prefs}}).catch(()=>{});toast("Enregistré.");}
+const SRV={profileLocked:["profile_locked",v=>!!v,false],discoverable:["discoverable",v=>!!v,true],allowRequests:["allow_requests",v=>!!v,true],allowMessages:["allow_messages",v=>v==="friends"?"friends":"everyone","all"],storiesAudience:["stories_audience",v=>v==="friends"?"friends":"everyone","public"]};
+function syncServer(k){const m=SRV[k];if(!m||!db()||!me())return;const row={user_id:me().id,updated_at:new Date().toISOString()};Object.keys(SRV).forEach(key=>{const d=SRV[key];row[d[0]]=d[1](prefs[key]??d[2]);});db().from("profile_settings").upsert(row,{onConflict:"user_id"}).then(({error})=>{if(error)toast(missing(error)?"Réglage gardé sur cet appareil seulement.":error.message);});}
+function setPref(k,v){prefs={...prefs,[k]:v};syncServer(k);try{localStorage.setItem(PK,JSON.stringify(prefs));}catch{}applyPrefs();if(db()&&me())db().auth.updateUser({data:{settings:prefs}}).catch(()=>{});toast("Enregistré.");}
 const T=(k,label,desc,def)=>({k,type:"toggle",label,desc,def}),SEL=(k,label,opts,def,desc)=>({k,type:"select",label,opts,def,desc});
 const prefPanel=(intro,defs)=>body=>{
   body.innerHTML='<p class="om2-note">'+esc(intro)+"</p>"+defs.map(d=>{
@@ -580,6 +582,7 @@ let synced=false;
 setInterval(async()=>{
   if(!me()){synced=false;return;}if(synced||!db())return;synced=true;
   try{const {data}=await db().auth.getUser();const s=data&&data.user&&data.user.user_metadata&&data.user.user_metadata.settings;if(s&&typeof s==="object"){prefs={...s};try{localStorage.setItem(PK,JSON.stringify(prefs));}catch{}applyPrefs();}}catch{}
+  try{const {data:ps}=await db().from("profile_settings").select("*").eq("user_id",me().id).maybeSingle();if(ps){prefs={...prefs,profileLocked:ps.profile_locked,discoverable:ps.discoverable,allowRequests:ps.allow_requests,allowMessages:ps.allow_messages==="friends"?"friends":"all",storiesAudience:ps.stories_audience==="friends"?"friends":"public"};try{localStorage.setItem(PK,JSON.stringify(prefs));}catch{}}}catch{}
   ensureRing();
 },1500);
 })();
