@@ -47,7 +47,241 @@ async function loadZipLibrary(){if(window.JSZip)return window.JSZip;await new Pr
 async function importStickerZip(){const file=await pick(".zip,application/zip,application/x-zip-compressed");if(!file)return;if(file.size>250*1024*1024)return toast("Archive trop volumineuse (maximum 250 Mo).");if(!confirm("Ton archive sera décompressée puis les stickers WEBP seront envoyés dans le stockage OMEGIA. Le dossier contient potentiellement plus de 200 Mo : utilise le Wi-Fi si possible. Continuer ?"))return;const status=$("stickerImportStatus"),button=$("importStickerPack");button.disabled=true;try{status.textContent="Lecture de l'archive…";const JSZip=await loadZipLibrary();const zip=await JSZip.loadAsync(file);const entries=Object.values(zip.files).filter(x=>!x.dir&&/\.webp$/i.test(x.name));if(!entries.length)throw Error("Aucun sticker WEBP trouvé dans cette archive.");const saved=getStickerPack();let done=0,added=0;for(const entry of entries){const blob=await entry.async("blob");const safe=(entry.name.split("/").pop()||"sticker.webp").replace(/[^a-z0-9._-]/gi,"_");const path=user.id+"/stickers/"+crypto.randomUUID()+"-"+safe;const {data,error}=await db.storage.from(BUCKET).upload(path,blob,{contentType:"image/webp",upsert:false});if(error)throw error;const url=db.storage.from(BUCKET).getPublicUrl(data.path).data.publicUrl;saved.push({name:safe,url});added++;done++;if(done%10===0||done===entries.length){status.textContent="Importation : "+done+" / "+entries.length+" stickers…";saveStickerPack(saved);}}saveStickerPack(saved);stickerGrid();status.textContent="Import terminé : "+added+" stickers ajoutés.";toast(added+" stickers importés dans OMEGIA !");}catch(e){status.textContent="Import interrompu : "+(e.message||"erreur");toast("Import : "+(e.message||"erreur"));}finally{button.disabled=false;}}
 function bindStickerPicker(){const panel=$("emojiPanel");if(!panel)return;document.querySelectorAll("[data-sticker-tab]").forEach(tab=>tab.addEventListener("click",()=>{const stickers=tab.dataset.stickerTab==="stickers";document.querySelectorAll("[data-sticker-tab]").forEach(x=>x.classList.toggle("active",x===tab));$("emojiGrid").hidden=stickers;$("stickerGrid").hidden=!stickers;$("stickerTools").hidden=!stickers;if(stickers)stickerGrid();}));$("importStickerPack")?.addEventListener("click",importStickerZip);$("chatEmoji")?.addEventListener("click",()=>{if(!panel.hidden){$("emojiGrid").hidden=false;$("stickerGrid").hidden=true;$("stickerTools").hidden=true;document.querySelectorAll("[data-sticker-tab]").forEach(x=>x.classList.toggle("active",x.dataset.stickerTab==="emoji"));}});}
 
-function bind(){
+/* ===== OMEGIA social+ : j'aime, commentaires, amis, messagerie, stories, statuts, notifications ===== */
+// Ces fonctions remplacent les versions plus simples définies plus haut (la dernière déclaration l'emporte).
+const css2=".om-ghost{border:0;background:transparent;font-size:16px;padding:6px;cursor:pointer;color:inherit}.om-counts{display:flex;justify-content:space-between;min-height:18px;margin-top:6px}.om-feed-actions button{flex:1;border-radius:10px;font-weight:650;cursor:pointer}.om-feed-actions button.on{color:#7652d6;background:#f0ebff}.om-comments{border-top:1px solid #eee;margin-top:8px;padding-top:8px}.om-comment{display:flex;gap:8px;align-items:flex-start;margin:8px 0}.om-comment .om-avatar{width:32px;height:32px;font-size:12px;flex:none}.om-cbody{flex:1;min-width:0;background:#f3f0fa;border-radius:14px;padding:7px 11px}.om-ctext{white-space:pre-wrap;overflow-wrap:anywhere}.om-comment-form{display:flex;gap:8px;margin-top:8px}.om-comment-form input{flex:1;min-width:0;height:40px;border:1px solid #d8d1e8;border-radius:999px;padding:0 14px;font:inherit;font-size:16px}.om-comment-form button{border:0;border-radius:999px;padding:0 16px;background:#7652d6;color:#fff;font-weight:650}.om-user .om-cancel{background:#eee9f7;color:#392b55}.om-row{width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid #eee;color:inherit;font:inherit;cursor:pointer}.om-unread{min-width:22px;height:22px;border-radius:11px;background:#7652d6;color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;padding:0 6px}.om-preview{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}.om-story{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:96px;max-width:110px;min-height:0;border:0;background:transparent;padding:0;cursor:pointer;color:inherit}.om-story .om-avatar{border:3px solid #8c6ce2;box-sizing:content-box}.om-story strong{font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.om-vis{display:block;margin-top:6px}.om-vis select{margin-left:8px;padding:6px;border-radius:8px}.dark-mode .om-post,.dark-mode .om-panel{background:#211d30;color:#eee9f7}.dark-mode .om-cbody{background:#2d2840}.dark-mode .om-panel input,.dark-mode .om-panel textarea,.dark-mode .om-comment-form input{background:#2d2840;color:#eee9f7;border-color:#453d5e}.dark-mode .om-feed-actions button.on{background:#352c52;color:#cbb8ff}.dark-mode .om-row{border-color:#352f48}";
+{const s=document.createElement("style");s.textContent=css2;document.head.appendChild(s);}
+
+const timeAgo=iso=>{const s=Math.max(1,Math.round((Date.now()-new Date(iso))/1000));if(s<60)return"à l’instant";const m=Math.round(s/60);if(m<60)return m+" min";const h=Math.round(m/60);if(h<24)return h+" h";const d=Math.round(h/24);if(d<7)return d+" j";return new Date(iso).toLocaleDateString("fr-FR");};
+const profCache=new Map();
+let globalCh=null,presence=new Set(),syncTimer=null;
+async function profilesById(ids){const need=[...new Set(ids)].filter(i=>i&&!profCache.has(i));if(need.length){const {data}=await db.from("profiles").select("id,first_name,last_name,avatar_url,username").in("id",need);(data||[]).forEach(p=>profCache.set(p.id,p));}return id=>profCache.get(id)||null;}
+function setBadge(id,n){const el=$(id);if(!el)return;el.hidden=!n;el.textContent=n>99?"99+":String(n||0);}
+function userRow(p,actions=[],sub=""){const el=document.createElement("div");el.className="om-user";el.innerHTML=av(p)+'<div class="om-grow"><strong>'+esc(name(p))+'</strong>'+(sub?'<div class="om-note">'+esc(sub)+'</div>':'')+'</div>';actions.forEach(([label,fn,secondary])=>{const b=document.createElement("button");b.type="button";b.textContent=label;if(secondary)b.className="om-cancel";b.onclick=async()=>{b.disabled=true;try{await fn();}finally{b.disabled=false;}};el.appendChild(b);});return el;}
+const groupByAuthor=list=>{const m=new Map();list.forEach(x=>{if(!m.has(x.author_id))m.set(x.author_id,[]);m.get(x.author_id).push(x);});return [...m.values()];};
+
+/* ---------- Fil d'actualité : j'aime, commentaires, suppression ---------- */
+async function loadFeed(){
+  const box=$("feed");if(!box||!user)return;
+  const {data:posts,error}=await db.from("posts").select("*,profiles:profiles!posts_author_id_fkey(first_name,last_name,avatar_url)").order("created_at",{ascending:false}).limit(40);
+  if(error){toast("Fil : "+error.message);return;}
+  const ids=(posts||[]).map(p=>p.id);
+  let rx=[],cm=[];
+  if(ids.length){const [r,c]=await Promise.all([db.from("post_reactions").select("post_id,user_id").in("post_id",ids),db.from("post_comments").select("post_id").in("post_id",ids)]);rx=r.data||[];cm=c.data||[];}
+  const likes={},mine=new Set(),comments={};
+  rx.forEach(r=>{likes[r.post_id]=(likes[r.post_id]||0)+1;if(r.user_id===user.id)mine.add(r.post_id);});
+  cm.forEach(c=>{comments[c.post_id]=(comments[c.post_id]||0)+1;});
+  box.innerHTML="";
+  if(!posts?.length){box.innerHTML='<div class="empty-state"><p>Ton fil est vide pour le moment.</p><p class="om-note">Publie quelque chose ou invite des amis.</p></div>';return;}
+  posts.forEach(p=>box.appendChild(postCard(p,likes[p.id]||0,mine.has(p.id),comments[p.id]||0)));
+}
+function postCard(p,nLikes,liked,nComments){
+  const el=document.createElement("article");el.className="om-post";el.dataset.post=p.id;
+  const own=p.author_id===user.id;
+  el.innerHTML='<div class="om-post-head">'+av(p.profiles)+'<div class="om-grow"><strong>'+esc(name(p.profiles))+'</strong><div class="om-note">'+timeAgo(p.created_at)+' · '+(p.visibility==="public"?"🌐 Public":"👥 Amis")+'</div></div>'+(own?'<button type="button" class="om-ghost" data-del aria-label="Supprimer la publication">🗑</button>':'')+'</div>'
+    +(p.body?'<div class="om-post-body">'+esc(p.body)+'</div>':'')+media(p.media_url,p.media_type)
+    +'<div class="om-counts om-note"><span data-nl></span><span data-nc></span></div>'
+    +'<div class="om-feed-actions"><button type="button" data-like>👍 J’aime</button><button type="button" data-toggle>💬 Commenter</button></div><div class="om-comments" hidden></div>';
+  let l=nLikes,on=liked,c=nComments;
+  const paint=()=>{el.querySelector("[data-nl]").textContent=l?"👍 "+l:"";el.querySelector("[data-nc]").textContent=c?c+" commentaire"+(c>1?"s":""):"";const b=el.querySelector("[data-like]");b.classList.toggle("on",on);b.setAttribute("aria-pressed",String(on));};
+  paint();
+  el.querySelector("[data-like]").onclick=async()=>{
+    const was=on;on=!was;l+=was?-1:1;paint();
+    const {error}=was?await db.from("post_reactions").delete().eq("post_id",p.id).eq("user_id",user.id):await db.from("post_reactions").upsert({post_id:p.id,user_id:user.id,reaction:"like"},{onConflict:"post_id,user_id"});
+    if(error){on=was;l+=was?1:-1;paint();toast(error.message);}
+  };
+  const cbox=el.querySelector(".om-comments");
+  el.querySelector("[data-toggle]").onclick=async()=>{cbox.hidden=!cbox.hidden;if(!cbox.hidden)await renderComments(p.id,cbox,n=>{c=n;paint();});};
+  el.querySelector("[data-del]")?.addEventListener("click",async()=>{if(!confirm("Supprimer cette publication ?"))return;const {error}=await db.from("posts").delete().eq("id",p.id);if(error)return toast(error.message);el.remove();toast("Publication supprimée.");});
+  return el;
+}
+async function renderComments(postId,box,onCount){
+  box.innerHTML='<p class="om-note">Chargement…</p>';
+  const {data,error}=await db.from("post_comments").select("id,author_id,body,created_at,profiles:profiles!post_comments_author_id_fkey(first_name,last_name,avatar_url)").eq("post_id",postId).order("created_at",{ascending:true}).limit(100);
+  if(error){box.innerHTML='<p class="om-note">'+esc(error.message)+'</p>';return;}
+  onCount(data.length);box.innerHTML="";
+  data.forEach(c=>{
+    const row=document.createElement("div");row.className="om-comment";
+    row.innerHTML=av(c.profiles)+'<div class="om-cbody"><strong>'+esc(name(c.profiles))+'</strong> <span class="om-note">'+timeAgo(c.created_at)+'</span><div class="om-ctext">'+esc(c.body)+'</div></div>'+(c.author_id===user.id?'<button type="button" class="om-ghost" aria-label="Supprimer le commentaire">✕</button>':'');
+    row.querySelector("button")?.addEventListener("click",async()=>{const {error:e}=await db.from("post_comments").delete().eq("id",c.id);if(e)return toast(e.message);renderComments(postId,box,onCount);});
+    box.appendChild(row);
+  });
+  const form=document.createElement("form");form.className="om-comment-form";
+  form.innerHTML='<input maxlength="3000" placeholder="Écrire un commentaire…" aria-label="Commentaire"><button>Envoyer</button>';
+  form.onsubmit=async e=>{e.preventDefault();const input=form.querySelector("input"),body=input.value.trim();if(!body)return;input.disabled=true;const {error:er}=await db.from("post_comments").insert({post_id:postId,author_id:user.id,body});input.disabled=false;if(er)return toast(er.message);renderComments(postId,box,onCount);};
+  box.appendChild(form);
+}
+
+/* ---------- Stories et statuts (24 h) ---------- */
+function viewer(list,table){
+  let i=0;
+  const w=modal(name(list[0].profiles),'<div class="om-note" id="omVMeta"></div><div id="omVBody"></div><div class="om-actions"><button type="button" class="om-cancel" id="omVPrev" aria-label="Précédent">‹</button><button type="button" class="om-cancel" id="omVNext" aria-label="Suivant">›</button><button type="button" class="om-cancel" id="omVDel" hidden>🗑 Supprimer</button></div>');
+  const show=()=>{const s=list[i];w.querySelector("#omVMeta").textContent=(i+1)+" / "+list.length+" · "+timeAgo(s.created_at);w.querySelector("#omVBody").innerHTML=(s.body?'<p class="om-post-body">'+esc(s.body)+'</p>':'')+media(s.media_url,s.media_type);w.querySelector("#omVPrev").disabled=i===0;w.querySelector("#omVNext").disabled=i===list.length-1;w.querySelector("#omVDel").hidden=s.author_id!==user.id;};
+  w.querySelector("#omVPrev").onclick=()=>{i--;show();};
+  w.querySelector("#omVNext").onclick=()=>{i++;show();};
+  w.querySelector("#omVDel").onclick=async()=>{if(!confirm("Supprimer ce contenu ?"))return;const {error}=await db.from(table).delete().eq("id",list[i].id);if(error)return toast(error.message);w.remove();loadStories();loadStatuses();};
+  show();
+}
+async function loadStories(){
+  const row=$("homeStories");if(!row||!user)return;
+  const {data,error}=await db.from("stories").select("*,profiles:profiles!stories_author_id_fkey(first_name,last_name,avatar_url)").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:true}).limit(100);
+  if(error)return;
+  row.innerHTML='<button type="button" class="story-card create-story" id="createStoryBtn"><div class="story-thumb create"><span class="plus">+</span></div><span class="story-label">Créer une story</span></button>';
+  row.querySelector("#createStoryBtn").onclick=()=>publish("story");
+  groupByAuthor(data||[]).forEach(list=>{const b=document.createElement("button");b.type="button";b.className="om-story";b.innerHTML=av(list[0].profiles)+'<strong>'+esc(list[0].author_id===user.id?"Ma story":name(list[0].profiles))+'</strong><span class="om-note">'+timeAgo(list[list.length-1].created_at)+'</span>';b.onclick=()=>viewer(list,"stories");row.appendChild(b);});
+}
+function statusRow(list,label){const el=document.createElement("button");el.type="button";el.className="om-user om-row";el.innerHTML=av(list[0].profiles)+'<div class="om-grow"><strong>'+esc(label||name(list[0].profiles))+'</strong><div class="om-note">'+list.length+' statut'+(list.length>1?'s':'')+' · '+timeAgo(list[list.length-1].created_at)+'</div></div>';el.onclick=()=>viewer(list,"statuses");return el;}
+async function loadStatuses(){
+  const box=$("statusList");if(!box||!user)return;
+  const {data,error}=await db.from("statuses").select("*,profiles:profiles!statuses_author_id_fkey(first_name,last_name,avatar_url)").gt("expires_at",new Date().toISOString()).order("created_at",{ascending:true}).limit(150);
+  if(error){box.innerHTML='<p class="om-note">'+esc(error.message)+'</p>';return;}
+  const mineList=(data||[]).filter(s=>s.author_id===user.id);
+  const meta=document.querySelector("#myStatusCard .status-meta");
+  if(meta)meta.textContent=mineList.length?mineList.length+" statut"+(mineList.length>1?"s":"")+" actif"+(mineList.length>1?"s":"")+" · appuie pour en ajouter":"Appuie pour ajouter un statut";
+  box.innerHTML="";
+  if(mineList.length)box.appendChild(statusRow(mineList,"Mes statuts"));
+  groupByAuthor((data||[]).filter(s=>s.author_id!==user.id)).forEach(list=>box.appendChild(statusRow(list)));
+  if(!box.children.length)box.innerHTML='<div class="empty-state"><p>Aucun statut pour le moment.</p><p class="om-note">Les statuts de tes amis apparaîtront ici.</p></div>';
+}
+
+/* ---------- Amis ---------- */
+async function answer(id,status){
+  const {error}=await db.from("friend_requests").update({status,updated_at:new Date().toISOString()}).eq("id",id);
+  toast(error?error.message:({accepted:"Vous êtes maintenant amis.",declined:"Invitation refusée.",cancelled:"Invitation annulée."}[status]));
+  await Promise.all([loadFriends(),loadFeed()]);
+}
+async function loadFriends(){
+  const inv=$("inviteList"),sug=$("suggestList");if(!inv||!sug||!user)return;
+  const {data:reqs,error}=await db.from("friend_requests").select("id,sender_id,recipient_id,status,created_at").in("status",["pending","accepted"]).order("created_at",{ascending:false});
+  if(error){inv.textContent=error.message;return;}
+  const incoming=reqs.filter(r=>r.status==="pending"&&r.recipient_id===user.id);
+  const sent=reqs.filter(r=>r.status==="pending"&&r.sender_id===user.id);
+  const friends=reqs.filter(r=>r.status==="accepted").map(r=>({reqId:r.id,id:r.sender_id===user.id?r.recipient_id:r.sender_id}));
+  const related=new Set(reqs.flatMap(r=>[r.sender_id,r.recipient_id]));related.delete(user.id);
+  const get=await profilesById([...related]);
+  setBadge("friendsBadge",incoming.length);
+  if($("inviteCount"))$("inviteCount").textContent=String(incoming.length);
+  inv.innerHTML="";
+  incoming.forEach(r=>inv.appendChild(userRow(get(r.sender_id),[["Accepter",()=>answer(r.id,"accepted")],["Refuser",()=>answer(r.id,"declined"),true]],"Veut devenir ton ami(e)")));
+  sent.forEach(r=>inv.appendChild(userRow(get(r.recipient_id),[["Annuler",()=>answer(r.id,"cancelled"),true]],"Invitation envoyée")));
+  if(!incoming.length&&!sent.length)inv.innerHTML='<p class="om-note">Aucune invitation en attente.</p>';
+  const tab=document.querySelector("[data-friends-tab].active")?.dataset.friendsTab||"online";
+  const title=document.querySelector(".friends-section-title");
+  sug.innerHTML="";
+  if(tab==="suggestions"){
+    if(title)title.textContent="Suggestions";
+    const {data:ppl}=await db.from("profiles").select("id,first_name,last_name,avatar_url,username").neq("id",user.id).order("created_at",{ascending:false}).limit(40);
+    const known=new Set([...related]);
+    const list=(ppl||[]).filter(p=>!known.has(p.id)).slice(0,12);
+    list.forEach(p=>sug.appendChild(userRow(p,[["Inviter",()=>invite(p.id)]],p.username?"@"+p.username:"")));
+    if(!list.length)sug.innerHTML='<p class="om-note">Aucune suggestion pour le moment.</p>';
+  }else{
+    const list=tab==="online"?friends.filter(f=>presence.has(f.id)):friends;
+    if(title)title.textContent=tab==="online"?"Ami(e)s en ligne":"Vos ami(e)s ("+friends.length+")";
+    list.forEach(f=>sug.appendChild(userRow(get(f.id),[["Message",()=>startChat(f.id)],["Retirer",async()=>{if(!confirm("Retirer cet(te) ami(e) ?"))return;const {error:e}=await db.from("friend_requests").delete().eq("id",f.reqId);toast(e?e.message:"Ami(e) retiré(e).");loadFriends();loadFeed();},true]],presence.has(f.id)?"🟢 En ligne":"")));
+    if(!list.length)sug.innerHTML='<p class="om-note">'+(tab==="online"?"Aucun(e) ami(e) en ligne pour le moment.":"Tu n’as pas encore d’ami(e). Utilise « Suggestions » ou la recherche.")+'</p>';
+  }
+  const find=document.createElement("button");find.type="button";find.className="primary-button small";find.id="omFind";find.textContent="Rechercher des membres";find.onclick=people;sug.appendChild(find);
+}
+
+/* ---------- Messagerie ---------- */
+const readKey=id=>"omegia.read."+id;
+const lastRead=id=>{try{return Date.parse(localStorage.getItem(readKey(id)))||0;}catch{return 0;}};
+async function markRead(id){const {data}=await db.from("messages").select("created_at").eq("conversation_id",id).order("created_at",{ascending:false}).limit(1);const t=data?.[0]?.created_at;if(t)try{localStorage.setItem(readKey(id),t);}catch{}}
+const preview=m=>!m?"Aucun message":m.body==="__OMEGIA_STICKER__"?"Sticker":m.body?m.body:({image:"📷 Photo",video:"🎬 Vidéo",audio:"🎙 Message vocal",file:"📎 Fichier"}[m.attachment_type]||"Message");
+async function startChat(peer){
+  const {data:shared,error}=await db.from("conversation_members").select("conversation_id,conversations!inner(is_group)").eq("user_id",peer).eq("conversations.is_group",false);
+  if(error)return toast(error.message);
+  let id=shared?.[0]?.conversation_id||null;
+  if(!id){
+    const {data:c,error:e1}=await db.from("conversations").insert({created_by:user.id,is_group:false}).select().single();
+    if(e1)return toast(e1.message);
+    id=c.id;
+    const {error:e2}=await db.from("conversation_members").insert([{conversation_id:id,user_id:user.id},{conversation_id:id,user_id:peer}]);
+    if(e2)return toast(e2.message);
+  }
+  document.querySelectorAll(".om-modal").forEach(m=>m.remove());
+  await openChat(id,peer);
+  markRead(id).then(loadChats);
+}
+async function loadChats(){
+  const box=$("chatList");if(!box||!user)return;
+  const {data:mine,error}=await db.from("conversation_members").select("conversation_id,conversations(is_group,title,created_at)").eq("user_id",user.id);
+  if(error){box.textContent=error.message;return;}
+  if(!mine?.length){box.innerHTML='<p class="om-note">Aucune conversation. Appuie sur + pour trouver un membre.</p>';setBadge("msgBadge",0);return;}
+  const ids=mine.map(r=>r.conversation_id);
+  const [{data:members},{data:msgs}]=await Promise.all([
+    db.from("conversation_members").select("conversation_id,user_id").in("conversation_id",ids),
+    db.from("messages").select("conversation_id,sender_id,body,attachment_type,created_at").in("conversation_id",ids).order("created_at",{ascending:false}).limit(300)]);
+  const get=await profilesById((members||[]).map(m=>m.user_id));
+  const last={},unread={};let total=0;
+  (msgs||[]).forEach(m=>{if(!last[m.conversation_id])last[m.conversation_id]=m;if(m.sender_id!==user.id&&Date.parse(m.created_at)>lastRead(m.conversation_id)){unread[m.conversation_id]=(unread[m.conversation_id]||0)+1;total++;}});
+  const rows=mine.map(r=>({id:r.conversation_id,peer:(members||[]).find(m=>m.conversation_id===r.conversation_id&&m.user_id!==user.id)?.user_id,conv:r.conversations,last:last[r.conversation_id]}))
+    .sort((a,b)=>Date.parse(b.last?.created_at||b.conv?.created_at||0)-Date.parse(a.last?.created_at||a.conv?.created_at||0));
+  box.innerHTML="";
+  rows.forEach(r=>{
+    const p=r.peer?get(r.peer):null;
+    const b=document.createElement("button");b.type="button";b.className="om-user om-row";
+    b.innerHTML=av(p)+'<div class="om-grow"><strong>'+esc(r.conv?.title||name(p))+'</strong><div class="om-note om-preview">'+esc((r.last?.sender_id===user.id?"Toi : ":"")+preview(r.last))+'</div></div>'+(r.last?'<span class="om-note">'+timeAgo(r.last.created_at)+'</span>':'')+(unread[r.id]?'<span class="om-unread">'+unread[r.id]+'</span>':'');
+    b.onclick=async()=>{await openChat(r.id,r.peer);markRead(r.id).then(loadChats);};
+    box.appendChild(b);
+  });
+  setBadge("msgBadge",total);
+}
+function onNewMessage(payload){
+  const m=payload.new;if(!m||m.sender_id===user.id)return;
+  if(active===m.conversation_id){markRead(m.conversation_id);}else toast("💬 Nouveau message");
+  loadChats();
+}
+
+/* ---------- Notifications ---------- */
+const NOTIF_KEY="omegia.notif.seen";
+async function fetchNotifs(){
+  const [inv,cm,rx]=await Promise.all([
+    db.from("friend_requests").select("sender_id,created_at").eq("recipient_id",user.id).eq("status","pending").order("created_at",{ascending:false}).limit(20),
+    db.from("post_comments").select("author_id,body,created_at,posts!inner(author_id)").eq("posts.author_id",user.id).neq("author_id",user.id).order("created_at",{ascending:false}).limit(20),
+    db.from("post_reactions").select("user_id,created_at,posts!inner(author_id)").eq("posts.author_id",user.id).neq("user_id",user.id).order("created_at",{ascending:false}).limit(20)]);
+  const items=[
+    ...(inv.data||[]).map(r=>({who:r.sender_id,t:r.created_at,text:"t’a envoyé une invitation."})),
+    ...(cm.data||[]).map(r=>({who:r.author_id,t:r.created_at,text:"a commenté ta publication : « "+r.body.slice(0,80)+(r.body.length>80?"…":"")+" »"})),
+    ...(rx.data||[]).map(r=>({who:r.user_id,t:r.created_at,text:"a aimé ta publication."}))
+  ].sort((a,b)=>Date.parse(b.t)-Date.parse(a.t));
+  return items;
+}
+const seenAt=()=>{try{return Date.parse(localStorage.getItem(NOTIF_KEY))||0;}catch{return 0;}};
+async function loadNotifBadge(){try{const items=await fetchNotifs();setBadge("notifBadge",items.filter(i=>Date.parse(i.t)>seenAt()).length);}catch(e){console.warn("Notifications:",e);}}
+async function openNotifs(){
+  const w=modal("Notifications",'<div id="omNotifs"><p class="om-note">Chargement…</p></div>');
+  try{
+    const items=await fetchNotifs();
+    const get=await profilesById(items.map(i=>i.who));
+    const box=w.querySelector("#omNotifs");box.innerHTML="";
+    items.forEach(i=>{const p=get(i.who),el=document.createElement("div");el.className="om-user";el.innerHTML=av(p)+'<div class="om-grow"><strong>'+esc(name(p))+'</strong> '+esc(i.text)+'<div class="om-note">'+timeAgo(i.t)+'</div></div>';box.appendChild(el);});
+    if(!items.length)box.innerHTML='<p class="om-note">Rien de nouveau pour le moment.</p>';
+    if(items[0])try{localStorage.setItem(NOTIF_KEY,items[0].t);}catch{}
+    setBadge("notifBadge",0);
+  }catch(e){w.querySelector("#omNotifs").textContent=e.message;}
+}
+
+/* ---------- Temps réel global : présence, messages, invitations, notifications ---------- */
+function startGlobalChannel(){
+  if(globalCh)db.removeChannel(globalCh);
+  const refreshFriends=()=>{clearTimeout(syncTimer);syncTimer=setTimeout(()=>{if(user&&!$("view-friends")?.hidden)loadFriends();},400);};
+  globalCh=db.channel("omegia-online",{config:{presence:{key:user.id}}})
+    .on("presence",{event:"sync"},()=>{presence=new Set(Object.keys(globalCh.presenceState()));refreshFriends();})
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"messages"},onNewMessage)
+    .on("postgres_changes",{event:"*",schema:"public",table:"friend_requests"},p=>{if(p.eventType==="INSERT"&&p.new?.recipient_id===user.id)toast("🤝 Nouvelle invitation d’ami");loadFriends();loadNotifBadge();})
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"post_comments"},loadNotifBadge)
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"post_reactions"},loadNotifBadge)
+    .subscribe(async s=>{if(s==="SUBSCRIBED")await globalCh.track({user_id:user.id,online_at:new Date().toISOString()});});
+}
+function bindPlus(){
+  capture("notifBtn",openNotifs);
+  $("chatBack")?.addEventListener("click",()=>setTimeout(loadChats,200),true);
+  document.querySelectorAll("[data-friends-tab]").forEach(c=>c.addEventListener("click",()=>setTimeout(loadFriends,0)));
+}
+
+function bind(){bindPlus();
 capture("editProfileBtn",editProfile);capture("editAbout",editProfile);capture("searchBtn",people);capture("openComposer",()=>publish("post"));capture("composerPhoto",()=>publish("post"));capture("createStoryBtn",()=>publish("story"));capture("myStatusCard",()=>publish("status"));capture("publishBtn",()=>publish("post"));capture("newChatBtn",people);capture("friendsSearch",people);capture("seeAllInvites",loadFriends);capture("editAvatar",()=>photo("avatar"));capture("editCover",()=>photo("cover"));
 ["profileAvatar","homeAvatar","sideAvatar"].forEach(id=>$(id)?.addEventListener("click",async()=>{try{const p=await profile();showPhoto(p?.avatar_url,"Photo de profil");}catch(e){toast(e.message);}}));
 document.querySelector(".profile-cover")?.addEventListener("click",async e=>{if(e.target.closest("#editCover"))return;try{const p=await profile();showPhoto(p?.cover_url,"Photo de couverture");}catch(err){toast(err.message);}});
