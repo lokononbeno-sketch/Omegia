@@ -914,4 +914,20 @@ body.dark-mode .side-item.danger{color:var(--danger)}
 body::before{animation:none!important;width:100%;will-change:auto}
 .app-header,.bottom-nav,.chat-view .chat-header{-webkit-backdrop-filter:none;backdrop-filter:none}
 
+/* Œil vertical animé à côté du nom OMEGIA : regarde à gauche, à droite, en haut, en bas, puis droit sur l'utilisateur */
+.om-eye{flex:none;margin-left:2px;overflow:visible}
+.om-eye-white{fill:#fff}
+body.dark-mode .om-eye-white{fill:#f6f3ff}
+.om-eye-outline{fill:none;stroke:var(--violet);stroke-width:1.8;stroke-linejoin:round}
+.om-eye-look{transform-origin:12px 18px;animation:omEyeLook 9s ease-in-out infinite}
+@keyframes omEyeLook{
+  0%,6%{transform:translate(0,0) scale(1.12)}
+  14%,24%{transform:translate(-3.5px,0) scale(1)}
+  32%,42%{transform:translate(3.5px,0) scale(1)}
+  50%,58%{transform:translate(0,-7px) scale(1)}
+  66%,74%{transform:translate(0,7px) scale(1)}
+  82%,100%{transform:translate(0,0) scale(1.12)}
+}
+@media (prefers-reduced-motion:reduce){.om-eye-look{animation:none}}
+
 @media (prefers-reduced-motion:reduce){body::before,.view[data-view='messages'],.chat-view.om3-anim #chatMessages{animation:none!important}}
