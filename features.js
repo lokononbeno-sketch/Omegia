@@ -533,9 +533,10 @@ async function peerProfile(){
 }
 function chatMore(){
   const peer=S().activePeer;if(!peer)return toast("Aucun contact sélectionné.");
-  const w=S().modal("Options de la conversation",'<div class="om-actions" style="flex-direction:column"><button type="button" id="cmP">👤 Voir le profil</button><button type="button" id="cmB" class="om-cancel">🚫 Bloquer ce contact</button><button type="button" id="cmX" class="om-cancel">Fermer</button></div>');
+  const w=S().modal("Options de la conversation",'<div class="om-actions" style="flex-direction:column"><button type="button" id="cmP">👤 Voir le profil</button><button type="button" id="cmT">🎨 Thème de la discussion</button><button type="button" id="cmB" class="om-cancel">🚫 Bloquer ce contact</button><button type="button" id="cmX" class="om-cancel">Fermer</button></div>');
   w.querySelector("#cmX").onclick=()=>w.remove();
   w.querySelector("#cmP").onclick=()=>{w.remove();peerProfile();};
+  w.querySelector("#cmT").onclick=()=>{w.remove();themeModal();};
   w.querySelector("#cmB").onclick=async()=>{if(!confirm("Bloquer ce contact ?"))return;try{await blockUser(peer);w.remove();toast("Contact bloqué.");}catch(e){toast(missing(e)?"Exécute d’abord supabase/features.sql dans Supabase.":e.message);}};
 }
 function profileMore(){
@@ -585,4 +586,159 @@ setInterval(async()=>{
   try{const {data:ps}=await db().from("profile_settings").select("*").eq("user_id",me().id).maybeSingle();if(ps){prefs={...prefs,profileLocked:ps.profile_locked,discoverable:ps.discoverable,allowRequests:ps.allow_requests,allowMessages:ps.allow_messages==="friends"?"friends":"all",storiesAudience:ps.stories_audience==="friends"?"friends":"public"};try{localStorage.setItem(PK,JSON.stringify(prefs));}catch{}}}catch{}
   ensureRing();
 },1500);
+
+/* ---------- Design v2 : thèmes de discussion, fond animé de la messagerie, photos de profil ---------- */
+const om3Css=`@keyframes om3Flow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.chat-view.om3-th #chatMessages{background-image:var(--om3-wall);background-size:var(--om3-size,cover);background-position:center;background-repeat:no-repeat}
+.chat-view.om3-anim #chatMessages{background-size:320% 320%;animation:om3Flow 16s ease infinite}
+.chat-view.om3-th .om-bubble.mine:not(:has(.om-sticker)){background:var(--om3-me)!important;color:var(--om3-met)!important}
+.chat-view.om3-th .om-bubble:not(.mine):not(:has(.om-sticker)){background:var(--om3-ot)!important;color:var(--om3-ott)!important}
+.view[data-view='messages']{position:relative;min-height:calc(100dvh - 150px);background-size:300% 300%;animation:om3Flow 22s ease infinite}
+html[data-ombg='aurore'] .view[data-view='messages']{background-image:linear-gradient(125deg,#efe9ff,#dff3ff,#ffe6f2,#e9ffe9,#efe9ff)}
+html[data-ombg='sunset'] .view[data-view='messages']{background-image:linear-gradient(125deg,#ffe9d6,#ffc7b0,#ffb3cf,#ffe0b8,#ffe9d6)}
+html[data-ombg='ocean'] .view[data-view='messages']{background-image:linear-gradient(125deg,#d7f3ff,#a6e0f7,#cfe9ff,#e2fff6,#d7f3ff)}
+html[data-ombg='nuit'] .view[data-view='messages']{background-image:linear-gradient(125deg,#140f2e,#2a1d5c,#0f1d3d,#2b1342,#140f2e);--ink:#f1ecff;--muted:#bdb2da;color:#f1ecff}
+html[data-ombg] .dark-mode .view[data-view='messages'],html.dark-mode[data-ombg] .view[data-view='messages']{background-image:linear-gradient(125deg,#16122a,#251b4d,#10183a,#16122a);--ink:#f1ecff;--muted:#bdb2da;color:#f1ecff}
+html[data-ombg='none'] .view[data-view='messages'],html[data-ombg='none'] .dark-mode .view[data-view='messages'],html.dark-mode[data-ombg='none'] .view[data-view='messages']{animation:none!important;background-image:none!important}
+.om3-fab{position:fixed;left:14px;bottom:calc(96px + env(safe-area-inset-bottom,0px));width:46px;height:46px;border-radius:50%;border:0;background:#7652d6;color:#fff;font-size:22px;box-shadow:0 6px 18px #0004;z-index:25}
+.om3-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+.om3-sw{position:relative;height:74px;border:3px solid transparent;border-radius:14px;overflow:hidden;display:flex;align-items:flex-end;padding:7px 9px;font-weight:650;font-size:12.5px;text-align:left}
+.om3-sw.on{border-color:#7652d6}
+.om3-sw i{position:absolute;top:9px;right:9px;width:30px;height:17px;border-radius:9px}
+.om3-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 2px}
+.om3-row input{width:46px;height:34px;border:0;padding:0;background:none}
+.om-photo-viewer.om3-ph{flex-direction:column;gap:10px;padding:54px 12px calc(14px + env(safe-area-inset-bottom,0px))}
+.om3-ph img{flex:1 1 auto;min-height:0;max-height:none}
+.om3-bar{display:flex;gap:8px;justify-content:center;flex:none}
+.om3-bar button{border:0;border-radius:99px;padding:11px 16px;background:#ffffff26;color:#fff;font-weight:650;font-size:14px}
+.om3-bar button.on{background:#7652d6}
+.om3-sheet{position:absolute;left:0;right:0;bottom:0;max-height:62%;display:flex;flex-direction:column;background:#fff;color:#211d2b;border-radius:18px 18px 0 0;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px))}
+.dark-mode .om3-sheet{background:#211d30;color:#eee9f7}
+.om3-list{overflow:auto;flex:1;min-height:90px}
+.om3-c{display:flex;gap:8px;align-items:flex-start;margin:9px 0}
+.om3-cb{flex:1;min-width:0;overflow-wrap:anywhere}
+.om3-del{border:0;background:none;font-size:16px}
+.om3-form{display:flex;gap:8px;margin-top:8px}
+.om3-form input{flex:1;min-width:0;height:42px;border:1px solid #d8d1e8;border-radius:99px;padding:0 14px;font:inherit;font-size:16px}
+.om3-form button{border:0;border-radius:99px;padding:0 16px;background:#7652d6;color:#fff;font-weight:650}`;
+{const s=document.createElement('style');s.textContent=om3Css;document.head.appendChild(s);}
+const om3Key=id=>'omegia.chatTheme.'+id;
+const OM3=[
+ {id:'violet',n:'Violet OMEGIA',wall:'linear-gradient(160deg,#f1ecff,#dccfff)',me:'#7652d6',ot:'#ffffff'},
+ {id:'aurore',n:'Aurore animée',wall:'linear-gradient(120deg,#c9b6ff,#8fd3f4,#ffc2e0,#b8f0d0,#c9b6ff)',me:'#6a4fd0',ot:'#ffffff',anim:true},
+ {id:'ocean',n:'Océan',wall:'linear-gradient(180deg,#d6f1ff,#8fd3f4)',me:'#0a84c1',ot:'#ffffff'},
+ {id:'sunset',n:'Coucher de soleil',wall:'linear-gradient(160deg,#ffe3d1,#ffb199,#ff7aa8)',me:'#d93a73',ot:'#ffffff'},
+ {id:'foret',n:'Forêt',wall:'linear-gradient(160deg,#e3f5e1,#a8dcb0)',me:'#1f9d55',ot:'#ffffff'},
+ {id:'rose',n:'Rose bonbon',wall:'linear-gradient(160deg,#ffe6f2,#ffc2e0)',me:'#e0489a',ot:'#ffffff'},
+ {id:'nuit',n:'Nuit étoilée',wall:'radial-gradient(circle at 20% 15%,#34296b,#0d0a1f 70%)',me:'#8c6ce2',ot:'#2a2540',dark:true},
+ {id:'or',n:'Or et noir',wall:'linear-gradient(160deg,#242424,#050505)',me:'#d4a017',ot:'#2b2b2b',dark:true}
+];
+const om3Ink=h=>{const m=/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(h||'');if(!m)return '#ffffff';const l=(0.299*parseInt(m[1],16)+0.587*parseInt(m[2],16)+0.114*parseInt(m[3],16))/255;return l>0.62?'#1f1b2b':'#ffffff';};
+const om3Read=id=>{try{return JSON.parse(localStorage.getItem(om3Key(id))||'{}')||{};}catch{return {};}};
+function om3Apply(id){
+ const v=document.querySelector('.chat-view');if(!v)return;
+ const t=id?om3Read(id):{},b=OM3.find(x=>x.id===t.p);
+ const keys=['--om3-wall','--om3-size','--om3-me','--om3-met','--om3-ot','--om3-ott'];
+ if(!id||(!b&&!t.photo&&!t.me&&!t.other)){keys.forEach(k=>v.style.removeProperty(k));v.classList.remove('om3-th','om3-anim');return;}
+ const base=b||OM3[0],me=t.me||base.me,ot=t.other||base.ot;
+ v.style.setProperty('--om3-wall',t.photo?'linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),url('+JSON.stringify(t.photo)+')':base.wall);
+ v.style.setProperty('--om3-me',me);v.style.setProperty('--om3-met',om3Ink(me));v.style.setProperty('--om3-ot',ot);v.style.setProperty('--om3-ott',om3Ink(ot));
+ v.classList.add('om3-th');v.classList.toggle('om3-anim',!t.photo&&!!base.anim);
+}
+async function om3Shrink(file,max,q){
+ const url=URL.createObjectURL(file);
+ try{const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(Error('Image illisible'));i.src=url;});const k=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);return c.toDataURL('image/jpeg',q);}
+ finally{URL.revokeObjectURL(url);}
+}
+function themeModal(){
+ const id=S().active;if(!id)return toast('Ouvre une conversation pour choisir son thème.');
+ const w=S().modal('Thème de la discussion',`<p class='om-note'>Ce thème reste sur ton téléphone et ne change rien pour l’autre personne.</p><div class='om3-grid'>${OM3.map(t=>`<button type='button' class='om3-sw' data-p='${t.id}' style='background:${t.wall};color:${t.dark?'#ffffff':'#241f31'}'><i style='background:${t.me}'></i>${esc(t.n)}</button>`).join('')}</div><div class='om-actions' style='flex-direction:column'><button type='button' id='om3Photo'>🖼 Choisir une photo de fond</button><label class='om3-row'>Couleur de mes messages<input type='color' id='om3Me' value='#7652d6'></label><label class='om3-row'>Couleur des messages reçus<input type='color' id='om3Ot' value='#ffffff'></label><button type='button' id='om3Bg'>🌈 Fond de la messagerie</button><button type='button' id='om3Reset' class='om-cancel'>↺ Réinitialiser</button><button type='button' id='om3X' class='om-cancel'>Fermer</button></div>`);
+ const mark=()=>{const t=om3Read(id),b=OM3.find(x=>x.id===t.p)||OM3[0];w.querySelectorAll('.om3-sw').forEach(x=>x.classList.toggle('on',!!t.p&&x.dataset.p===b.id));w.querySelector('#om3Me').value=t.me||b.me;w.querySelector('#om3Ot').value=t.other||b.ot;};
+ const save=o=>{const t={...om3Read(id),...o};try{localStorage.setItem(om3Key(id),JSON.stringify(t));}catch{return toast('Mémoire pleine : choisis une photo plus légère.');}om3Apply(id);mark();};
+ w.querySelectorAll('.om3-sw').forEach(b=>b.onclick=()=>save({p:b.dataset.p,photo:null,me:null,other:null}));
+ w.querySelector('#om3Me').onchange=e=>save({me:e.target.value,p:om3Read(id).p||'violet'});
+ w.querySelector('#om3Ot').onchange=e=>save({other:e.target.value,p:om3Read(id).p||'violet'});
+ w.querySelector('#om3Photo').onclick=async()=>{try{const f=await S().pick('image/*');if(!f)return;const d=await om3Shrink(f,1000,0.72);save({photo:d,p:om3Read(id).p||'violet'});}catch(e){toast('Photo impossible : '+(e.message||'erreur'));}};
+ w.querySelector('#om3Reset').onclick=()=>{try{localStorage.removeItem(om3Key(id));}catch{}om3Apply(id);mark();};
+ w.querySelector('#om3Bg').onclick=()=>{w.remove();om3BgModal();};
+ w.querySelector('#om3X').onclick=()=>w.remove();
+ mark();
+}
+const OM3BG=[['aurore','🌈 Aurore animée'],['sunset','🌅 Coucher de soleil'],['ocean','🌊 Océan'],['nuit','🌌 Nuit étoilée'],['none','⛔ Aucun (simple)']];
+function om3SetBg(k){try{localStorage.setItem('omegia.msgBg',k);}catch{}document.documentElement.dataset.ombg=k;}
+{let k='aurore';try{k=localStorage.getItem('omegia.msgBg')||'aurore';}catch{}document.documentElement.dataset.ombg=k;}
+function om3BgModal(){
+ const cur=document.documentElement.dataset.ombg||'aurore';
+ const w=S().modal('Fond de la messagerie',`<p class='om-note'>Choisis l’ambiance de ta liste de discussions.</p><div class='om-actions' style='flex-direction:column'>${OM3BG.map(x=>`<button type='button' data-k='${x[0]}' class='${x[0]===cur?'':'om-cancel'}'>${x[1]}</button>`).join('')}<button type='button' id='om3bx' class='om-cancel'>Fermer</button></div>`);
+ w.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{om3SetBg(b.dataset.k);w.querySelectorAll('[data-k]').forEach(x=>{x.className=x===b?'':'om-cancel';});});
+ w.querySelector('#om3bx').onclick=()=>w.remove();
+}
+{const mv=document.querySelector(`.view[data-view='messages']`);if(mv&&!mv.querySelector('.om3-fab')){const f=document.createElement('button');f.type='button';f.className='om3-fab';f.setAttribute('aria-label','Fond de la messagerie');f.textContent='🎨';f.onclick=om3BgModal;mv.appendChild(f);}}
+let om3Cur;
+setInterval(()=>{const id=S().active||null;if(id!==om3Cur){om3Cur=id;om3Apply(id);}},400);
+
+/* Photos de profil et de couverture : j’aime, commentaires, enregistrement (pas de partage) */
+async function om3SavePhoto(url){
+ try{const r=await fetch(url);if(!r.ok)throw Error('Téléchargement refusé');const b=await r.blob();const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='OMEGIA-'+Date.now()+'.jpg';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);toast('Photo enregistrée.');}
+ catch(e){toast('Enregistrement impossible : '+(e.message||'erreur'));}
+}
+window.omegiaPhotoViewer=function(url,title){
+ if(!url)return;
+ const owner=(/omegia-media\/([0-9a-f-]{36})\//i.exec(url)||[])[1]||null;
+ const w=document.createElement('div');w.className='om-photo-viewer om3-ph';
+ w.innerHTML=`<button type='button' class='om-photo-close' aria-label='Fermer'>×</button><img alt=''><div class='om3-bar'><button type='button' data-l><span>🤍</span> J’aime <b>0</b></button><button type='button' data-c>💬 Commenter <b>0</b></button><button type='button' data-s>💾 Enregistrer</button></div>`;
+ const im=w.querySelector('img');im.src=url;im.alt=title||'Photo';
+ document.body.appendChild(w);
+ w.querySelector('.om-photo-close').onclick=()=>w.remove();
+ const lb=w.querySelector('[data-l]'),cb=w.querySelector('[data-c]');let liked=false;
+ const load=async()=>{
+  if(!db()||!me())return;
+  try{
+   const [r,c]=await Promise.all([db().from('photo_reactions').select('user_id').eq('photo_url',url),db().from('photo_comments').select('id',{count:'exact',head:true}).eq('photo_url',url)]);
+   if(r.error)throw r.error;
+   const rows=r.data||[];liked=rows.some(x=>x.user_id===me().id);
+   lb.querySelector('span').textContent=liked?'❤️':'🤍';lb.querySelector('b').textContent=String(rows.length);lb.classList.toggle('on',liked);
+   cb.querySelector('b').textContent=String(c.count||0);
+  }catch(e){}
+ };
+ lb.onclick=async()=>{
+  if(!ready())return;lb.disabled=true;
+  try{
+   if(liked){const {error}=await db().from('photo_reactions').delete().eq('photo_url',url).eq('user_id',me().id);if(error)throw error;}
+   else{const {error}=await db().from('photo_reactions').insert({photo_url:url,owner_id:owner,user_id:me().id,reaction:'like'});if(error)throw error;}
+   await load();
+  }catch(e){toast(e.message||'Erreur');}
+  lb.disabled=false;
+ };
+ cb.onclick=()=>{
+  let sh=w.querySelector('.om3-sheet');if(sh){sh.remove();return;}
+  if(!ready())return;
+  sh=document.createElement('div');sh.className='om3-sheet';
+  sh.innerHTML=`<strong>Commentaires</strong><div class='om3-list'><p class='om-note'>Chargement…</p></div><div class='om3-form'><input maxlength='1000' placeholder='Écrire un commentaire…'><button type='button'>Envoyer</button></div>`;
+  w.appendChild(sh);
+  const list=sh.querySelector('.om3-list'),inp=sh.querySelector('input'),btn=sh.querySelector('.om3-form button');
+  const draw=async()=>{
+   const {data,error}=await db().from('photo_comments').select('id,author_id,body,created_at').eq('photo_url',url).order('created_at',{ascending:true}).limit(100);
+   if(error){list.innerHTML=errBox(error);return;}
+   const P=await profs((data||[]).map(x=>x.author_id));
+   list.innerHTML=(data||[]).length?'':`<p class='om-note'>Aucun commentaire. Sois le premier !</p>`;
+   (data||[]).forEach(x=>{
+    const el=document.createElement('div');el.className='om3-c';
+    el.innerHTML=av(P[x.author_id])+`<div class='om3-cb'><strong>${esc(nm(P[x.author_id]))}</strong><div>${esc(x.body)}</div><div class='om2-note'>${ago(x.created_at)}</div></div>`;
+    if(x.author_id===me().id||owner===me().id){const d=document.createElement('button');d.type='button';d.className='om3-del';d.textContent='🗑';d.onclick=async()=>{const {error:e}=await db().from('photo_comments').delete().eq('id',x.id);if(e)return toast(e.message);draw();load();};el.appendChild(d);}
+    list.appendChild(el);
+   });
+   list.scrollTop=list.scrollHeight;
+  };
+  btn.onclick=async()=>{
+   const t=inp.value.trim();if(!t)return;btn.disabled=true;
+   try{const {error}=await db().from('photo_comments').insert({photo_url:url,owner_id:owner,author_id:me().id,body:t});if(error)throw error;inp.value='';await draw();load();}
+   catch(e){toast(e.message||'Erreur');}
+   btn.disabled=false;
+  };
+  draw();
+ };
+ w.querySelector('[data-s]').onclick=()=>om3SavePhoto(url);
+ load();
+};
 })();
