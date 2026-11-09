@@ -31,3 +31,23 @@
   window.addEventListener("online",()=>check(true));
   setTimeout(()=>check(true),5000);
 })();
+/* Œil OMEGIA : suit le doigt, puis reprend son animation après 2,5 s */
+(()=>{
+  const eyes=[...document.querySelectorAll(".om-eye")];
+  if(!eyes.length)return;
+  const MAXX=3.5,MAXY=7;let timer=null;
+  function look(x,y){
+    eyes.forEach(eye=>{
+      if(!eye.getClientRects().length)return;
+      const r=eye.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+      const dx=x-cx,dy=y-cy,d=Math.hypot(dx,dy)||1,k=Math.min(1,d/120);
+      eye.style.setProperty("--ex",(dx/d*MAXX*k).toFixed(2)+"px");
+      eye.style.setProperty("--ey",(dy/d*MAXY*k).toFixed(2)+"px");
+      eye.classList.add("om-eye-follow");
+    });
+    clearTimeout(timer);
+    timer=setTimeout(()=>eyes.forEach(e=>e.classList.remove("om-eye-follow")),2500);
+  }
+  const handler=e=>{const t=(e.touches&&e.touches[0])||e;if(typeof t.clientX==="number")look(t.clientX,t.clientY);};
+  ["pointermove","pointerdown","touchstart","touchmove"].forEach(n=>window.addEventListener(n,handler,{passive:true}));
+})();

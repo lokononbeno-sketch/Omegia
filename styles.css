@@ -928,6 +928,19 @@ body.dark-mode .om-eye-white{fill:#f6f3ff}
   66%,74%{transform:translate(0,7px) scale(1)}
   82%,100%{transform:translate(0,0) scale(1.12)}
 }
-@media (prefers-reduced-motion:reduce){.om-eye-look{animation:none}}
+/* Clignement fréquent (parfois double) + suivi du doigt */
+.om-eye{transform-origin:50% 50%;animation:omEyeBlink 4.6s infinite}
+@keyframes omEyeBlink{
+  0%,56%{transform:scaleX(1)}
+  59%{transform:scaleX(.08)}
+  62%,86%{transform:scaleX(1)}
+  89%{transform:scaleX(.08)}
+  92%{transform:scaleX(1)}
+  94%{transform:scaleX(.08)}
+  97%,100%{transform:scaleX(1)}
+}
+.om-eye.om-eye-follow .om-eye-look{animation:none;transform:translate(var(--ex,0px),var(--ey,0px));transition:transform .12s ease-out}
+.om-eye-lg{margin-left:4px}
+@media (prefers-reduced-motion:reduce){.om-eye-look,.om-eye{animation:none}}
 
 @media (prefers-reduced-motion:reduce){body::before,.view[data-view='messages'],.chat-view.om3-anim #chatMessages{animation:none!important}}
