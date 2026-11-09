@@ -851,3 +851,7 @@ body.dark-mode .footer { color: #a39bb8; }
 .om-voice-bar .om-voice-time{font-size:12px;white-space:nowrap}
 .om-voice-active>.chat-emoji-btn,.om-voice-active>.chat-input-wrap,.om-voice-active>.chat-mic-send{display:none!important}
 .om-sticker-back{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--ink);font:inherit;font-weight:650;padding:6px 10px 10px}
+
+/* Correctif : la conversation reste cachée tant qu'aucun contact n'est ouvert, et l'en-tête passe sous la barre de statut */
+.chat-view[hidden]{display:none!important}
+.chat-view .chat-header{padding-top:calc(6px + env(safe-area-inset-top,0px))}
