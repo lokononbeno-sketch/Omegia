@@ -888,4 +888,59 @@ body.dark-mode .chat-view .chat-messages{background-image:linear-gradient(165deg
 body.dark-mode .om-bubble:not(.mine):not(:has(.om-sticker)){background:#2a2540;color:#f2efff}
 .chat-mic-send{background-image:linear-gradient(135deg,#25d366,#13a85a)}
 .view:not([hidden]):not([data-view='messages']):not([data-view='chat']){animation:omFade .3s ease}
+
+/* ===== OMEGIA Neon Contrast : palette accessible + effets allégés ===== */
+:root{--glass:rgba(255,255,255,.96);--grad-strong:linear-gradient(135deg,#7c4dff 0%,#6d3df0 55%,#a21caf 100%)}
+body.dark-mode{
+  --violet:#c9b8ff;--violet-dark:#b79bff;
+  --lavender:#2a2347;--ink:#f6f3ff;--muted:#c6c0de;--line:#3f3763;
+  --surface:#1b172c;--page:#0e0b1c;
+  --green:#34d3b0;--green-dark:#1fae8e;
+  --glass:rgba(22,18,38,.96);--danger:#ff8a8a;
+}
+/* Textes violets lisibles (titre, liens, Voir tout) */
+body.dark-mode .header-title,body.dark-mode .wordmark{background:linear-gradient(90deg,#d9ccff,#f5b8ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+body.dark-mode .link-text,body.dark-mode .link-button,body.dark-mode .forgot{color:#d3c6ff}
+body.dark-mode input::placeholder,body.dark-mode textarea::placeholder{color:#aaa3c7}
+/* Fonds violets : texte blanc sur violet foncé (et non sur lavande) */
+.chip.active,.etab.active,.story-thumb .plus,.chat-mic-send.sending,.sticker-tools button,.primary-button.small{background:var(--grad-strong);color:#fff}
+body.dark-mode .chip.active,body.dark-mode .etab.active,body.dark-mode .story-thumb .plus{background:var(--grad-strong);color:#fff}
+/* Rouge lisible sur fond sombre */
+body.dark-mode .invite-count,
+body.dark-mode .set-row.danger-row .set-label,
+body.dark-mode .settings-item.danger,
+body.dark-mode .side-item.danger{color:var(--danger)}
+/* Effets allégés : fond statique, pas de flou temps réel (téléphones modestes) */
+body::before{animation:none!important;width:100%;will-change:auto}
+.app-header,.bottom-nav,.chat-view .chat-header{-webkit-backdrop-filter:none;backdrop-filter:none}
+
+/* Œil vertical animé à côté du nom OMEGIA : regarde à gauche, à droite, en haut, en bas, puis droit sur l'utilisateur */
+.om-eye{flex:none;margin-left:2px;overflow:visible}
+.om-eye-white{fill:#fff}
+body.dark-mode .om-eye-white{fill:#f6f3ff}
+.om-eye-outline{fill:none;stroke:var(--violet);stroke-width:1.8;stroke-linejoin:round}
+.om-eye-look{transform-origin:12px 18px;animation:omEyeLook 9s ease-in-out infinite}
+@keyframes omEyeLook{
+  0%,6%{transform:translate(0,0) scale(1.12)}
+  14%,24%{transform:translate(-3.5px,0) scale(1)}
+  32%,42%{transform:translate(3.5px,0) scale(1)}
+  50%,58%{transform:translate(0,-7px) scale(1)}
+  66%,74%{transform:translate(0,7px) scale(1)}
+  82%,100%{transform:translate(0,0) scale(1.12)}
+}
+/* Clignement fréquent (parfois double) + suivi du doigt */
+.om-eye{transform-origin:50% 50%;animation:omEyeBlink 4.6s infinite}
+@keyframes omEyeBlink{
+  0%,56%{transform:scaleX(1)}
+  59%{transform:scaleX(.08)}
+  62%,86%{transform:scaleX(1)}
+  89%{transform:scaleX(.08)}
+  92%{transform:scaleX(1)}
+  94%{transform:scaleX(.08)}
+  97%,100%{transform:scaleX(1)}
+}
+.om-eye.om-eye-follow .om-eye-look{animation:none;transform:translate(var(--ex,0px),var(--ey,0px));transition:transform .12s ease-out}
+.om-eye-lg{margin-left:4px}
+@media (prefers-reduced-motion:reduce){.om-eye-look,.om-eye{animation:none}}
+
 @media (prefers-reduced-motion:reduce){body::before,.view[data-view='messages'],.chat-view.om3-anim #chatMessages{animation:none!important}}
