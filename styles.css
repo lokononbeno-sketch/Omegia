@@ -833,3 +833,21 @@ body.dark-mode .footer { color: #a39bb8; }
 
 /* OMEGIA — bibliothèque de stickers animés */
 .sticker-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px;max-height:260px;overflow:auto}.sticker-choice{border:0;background:transparent;border-radius:12px;min-width:0;aspect-ratio:1;display:grid;place-items:center;padding:5px}.sticker-choice:active{background:#eee8fb}.sticker-choice img{width:100%;height:100%;object-fit:contain}.sticker-tools{display:flex;flex-direction:column;gap:7px;padding:8px 12px;color:var(--muted);font-size:12px}.sticker-tools button{border:0;border-radius:10px;padding:10px;background:var(--violet);color:white;font-weight:700}.sticker-empty{grid-column:1/-1;text-align:center;padding:18px;color:var(--muted);font-size:13px}.om-bubble .om-sticker{display:block;width:auto;max-width:min(190px,55vw);max-height:190px;object-fit:contain;border-radius:8px;background:transparent;margin:0}.om-bubble:has(.om-sticker){background:transparent;padding:4px;box-shadow:none}.om-bubble.mine:has(.om-sticker){background:transparent}
+
+
+/* Messagerie : ancrage stable et commandes vocales */
+.chat-view{position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important;max-height:100dvh!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;padding:0!important;z-index:20}
+.chat-view .chat-header{flex:0 0 auto}
+.chat-view .chat-messages{flex:1 1 0!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain;touch-action:pan-y}
+.chat-view .chat-input-bar{flex:0 0 auto!important;position:relative!important;z-index:12;padding-bottom:calc(8px + env(safe-area-inset-bottom))}
+.chat-view .emoji-panel{position:absolute!important;bottom:calc(66px + env(safe-area-inset-bottom))!important;max-height:min(45dvh,360px)!important;z-index:15!important}
+.chat-input-bar.om-voice-active{gap:0}
+.om-voice-bar{width:100%;min-height:48px;display:flex;align-items:center;gap:9px;padding:4px 8px;background:var(--surface);border-radius:24px;color:var(--ink)}
+.om-voice-bar button{width:38px;height:38px;flex:none;border:0;border-radius:50%;background:var(--lavender);color:var(--ink);font-size:19px}
+.om-voice-bar [data-vsend]{background:#25d366;color:#fff}
+.om-voice-bar canvas{flex:1;min-width:35px;height:34px}
+.om-voice-bar audio{flex:1;min-width:0;max-width:65%}
+.om-voice-bar [data-vtime]{font-variant-numeric:tabular-nums;font-size:13px}
+.om-voice-bar .om-voice-time{font-size:12px;white-space:nowrap}
+.om-voice-active>.chat-emoji-btn,.om-voice-active>.chat-input-wrap,.om-voice-active>.chat-mic-send{display:none!important}
+.om-sticker-back{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--ink);font:inherit;font-weight:650;padding:6px 10px 10px}
