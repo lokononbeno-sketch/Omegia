@@ -15,6 +15,11 @@ if (fs.existsSync(path.join(root, "assets"))) {
   fs.cpSync(path.join(root, "assets"), path.join(webDir, "assets"), { recursive: true });
 }
 
+// Une seule source de vérité : version.json. Injecte le numéro dans update.js avant la synchronisation Capacitor.
+const appVersion = JSON.parse(fs.readFileSync(path.join(root, "version.json"), "utf8")).version;
+const updateFile = path.join(webDir, "update.js");
+fs.writeFileSync(updateFile, fs.readFileSync(updateFile, "utf8").replace(/const CURRENT_VERSION="[^"]*";/, `const CURRENT_VERSION="${appVersion}";`));
+
 execFileSync("npx", ["cap", "add", "android"], { stdio: "inherit" });
 execFileSync("npx", ["cap", "sync", "android"], { stdio: "inherit" });
 
@@ -45,8 +50,8 @@ if (fs.existsSync(anydpi)) {
 const gradleFile = path.join(root, "android/app/build.gradle");
 if (fs.existsSync(gradleFile)) {
   let gradle = fs.readFileSync(gradleFile, "utf8");
-  gradle = gradle.replace(/versionCode\s+1\b/, "versionCode 9");
-  gradle = gradle.replace(/versionName\s+"[^"]+"/, 'versionName "1.0.8"');
+  gradle = gradle.replace(/versionCode\s+1\b/, "versionCode " + (Number(process.env.CI_PIPELINE_IID) || 100));
+  gradle = gradle.replace(/versionName\s+"[^"]+"/, `versionName "${appVersion}"`);
   fs.writeFileSync(gradleFile, gradle);
 }
 
