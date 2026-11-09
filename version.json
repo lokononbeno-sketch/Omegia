@@ -1,5 +1,5 @@
 {
-  "version": "1.0.15",
+  "version": "1.0.16",
   "name": "OMEGIA",
   "apk": "https://gitlab.com/api/v4/projects/88621748/jobs/artifacts/main/raw/dist/OMEGIA.apk?job=android-apk",
   "notes": "Nouvelle palette Aurora et fond animé sur toute l’application. Thèmes de discussion (couleurs, photo de fond), fond animé de la messagerie, j’aime et commentaires sur les photos de profil. Stickers : l’import reprend là où il s’est arrêté ; notes vocales : pause et envoi corrigés. Correctif : import du dossier ZIP de stickers (type WEBP refusé par le serveur) ; la messagerie ne s’affiche plus par-dessus l’accueil à la connexion ; en-tête de conversation sous la barre de statut. Inscription e-mail plus claire ; redirect auth selon l’URL réelle ; message explicite si e-mail de confirmation non reçu (SMTP Supabase)."

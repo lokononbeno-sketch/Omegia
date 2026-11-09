@@ -447,6 +447,55 @@ async function audioNote(){
  try{omVoiceCleanup();omVoiceCloseCtx();omVoiceStream=await navigator.mediaDevices.getUserMedia({audio:true});omVoiceChunks=[];omVoiceElapsed=0;omVoiceSendNow=false;const mime=['audio/webm;codecs=opus','audio/webm','audio/mp4'].find(x=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(x));const r=new MediaRecorder(omVoiceStream,mime?{mimeType:mime}:undefined);omVoiceRecorder=r;r.ondataavailable=e=>{if(e.data&&e.data.size)omVoiceChunks.push(e.data);};r.onstop=()=>omVoicePreview(r);r.start(200);omVoiceStarted=Date.now();const panel=omVoicePanel();panel.innerHTML=`<button type='button' data-vcancel aria-label='Annuler'>×</button><span data-vtime>00:00</span><canvas width='220' height='34' aria-label='Onde sonore'></canvas><button type='button' data-vpause aria-label='Pause'>Ⅱ</button><button type='button' data-vsend aria-label='Envoyer'>➤</button>`;panel.querySelector('[data-vcancel]').onclick=()=>{const c=omVoiceRecorder;if(c){c.onstop=null;if(c.state!=='inactive'){try{c.stop();}catch{}}}omVoiceCloseCtx();omVoiceCleanup();chatSignal('recording',false);};panel.querySelector('[data-vpause]').onclick=omVoiceTogglePause;panel.querySelector('[data-vsend]').onclick=()=>omVoiceFinish(true);try{const ac=new(window.AudioContext||window.webkitAudioContext)();omVoiceCtx=ac;if(ac.state==='suspended')ac.resume().catch(()=>{});omVoiceAnalyser=ac.createAnalyser();omVoiceAnalyser.fftSize=256;ac.createMediaStreamSource(omVoiceStream).connect(omVoiceAnalyser);omVoiceDraw(panel.querySelector('canvas'));}catch{}omVoiceTimer=setInterval(omVoiceTick,200);chatSignal('recording',true);}catch(e){omVoiceCleanup();toast('Autorise le microphone pour enregistrer.');}
 }
 
+/* ===== Notes vocales v4 : étapes visibles (1/4 à 4/4) pour diagnostiquer un envoi qui n'aboutit pas ===== */
+let omVoiceWatch=0;
+async function omVoiceSendBlob(blob,type){
+ toast("3/4 Envoi du fichier…");
+ const f=new File([blob],'note-vocale.'+(type.includes('mp4')?'m4a':'webm'),{type});
+ const url=await upload(f,'messages');
+ toast("4/4 Fichier envoyé, publication du message…");
+ await send('',url,'audio');
+}
+function omVoiceFinish(sendNow){
+ omVoiceSendNow=sendNow===true;
+ toast("1/4 Arrêt de l'enregistrement…");
+ const r=omVoiceRecorder;
+ if(!r||r.state==='inactive'){toast("Aucun enregistrement actif.");return;}
+ try{
+  if(r.state==='recording')omVoiceElapsed+=Date.now()-omVoiceStarted;
+  clearInterval(omVoiceTimer);omVoiceTimer=null;
+  clearTimeout(omVoiceWatch);
+  omVoiceWatch=setTimeout(()=>{if(omVoiceRecorder===r&&r.state!=='inactive')toast("Bloqué : l'enregistrement ne répond pas (état "+r.state+").");else if(omVoiceRecorder===r)toast("Bloqué avant l'étape 2/4 (audio non préparé).");},4000);
+  r.stop();chatSignal('recording',false);
+ }catch(e){toast("Échec à l'arrêt : "+(e&&e.message||e));}
+}
+function omVoicePreview(r){
+ clearTimeout(omVoiceWatch);omVoiceWatch=0;
+ try{
+  if(omVoiceStream)omVoiceStream.getTracks().forEach(t=>t.stop());
+  omVoiceStream=null;omVoiceAnalyser=null;omVoiceCloseCtx();
+  if(omVoiceFrame)cancelAnimationFrame(omVoiceFrame);omVoiceFrame=0;
+  clearInterval(omVoiceTimer);omVoiceTimer=null;
+  const p=document.querySelector('.om-voice-bar');
+  if(!p){toast("Barre vocale introuvable.");return;}
+  const sendNow=omVoiceSendNow;omVoiceSendNow=false;
+  if(!omVoiceChunks.length){omVoiceCleanup();toast("Enregistrement vide, réessaie.");return;}
+  const type=(r.mimeType||'audio/webm').split(';')[0]||'audio/webm';
+  const blob=new Blob(omVoiceChunks,{type});omVoiceBlob=blob;
+  if(omVoiceUrl)URL.revokeObjectURL(omVoiceUrl);
+  omVoiceUrl=URL.createObjectURL(blob);
+  if(sendNow)toast("2/4 Audio prêt ("+Math.max(1,Math.round(blob.size/1024))+" Ko, "+type+")");
+  const showPreview=()=>{
+   p.innerHTML=`<button type='button' data-vdelete aria-label='Supprimer'>🗑</button><audio controls src='${omVoiceUrl}'></audio><span class='om-voice-time'>${omVoiceClock(omVoiceElapsed)}</span><button type='button' data-vsend aria-label='Envoyer'>➤</button>`;
+   p.querySelector('[data-vdelete]').onclick=()=>omVoiceCleanup();
+   p.querySelector('[data-vsend]').onclick=async e=>{const b=e.currentTarget;if(b.disabled)return;b.disabled=true;b.textContent='…';try{await omVoiceSendBlob(blob,type);omVoiceCleanup();}catch(err){b.disabled=false;b.textContent='➤';toast("Échec : "+(err&&err.message||err||'envoi vocal impossible'));}};
+  };
+  if(!sendNow){showPreview();return;}
+  p.innerHTML="<span class='om-voice-time' style='flex:1;text-align:center'>Envoi en cours…</span>";
+  omVoiceSendBlob(blob,type).then(()=>omVoiceCleanup()).catch(err=>{toast("Échec : "+(err&&err.message||err||'envoi vocal impossible'));if(document.querySelector('.om-voice-bar'))showPreview();});
+ }catch(e){toast("Erreur vocale : "+(e&&e.message||e));}
+}
+
 window.omegiaSocial={send,openSavedPosts,openMemories,get db(){return db},get user(){return user},get activePeer(){return activePeer},get active(){return active},toast,modal,esc,name,av,pick,upload,refreshProfile,showPhoto};
 window.addEventListener("load",()=>setTimeout(boot,300));
 })();
