@@ -855,3 +855,37 @@ body.dark-mode .footer { color: #a39bb8; }
 /* Correctif : la conversation reste cachée tant qu'aucun contact n'est ouvert, et l'en-tête passe sous la barre de statut */
 .chat-view[hidden]{display:none!important}
 .chat-view .chat-header{padding-top:calc(6px + env(safe-area-inset-top,0px))}
+
+/* ===== OMEGIA Aurora : nouvelle palette et fond animé pour toute l'application ===== */
+:root{--violet:#7c4dff;--violet-dark:#5b2fe0;--lavender:#efe8ff;--ink:#1f1a33;--muted:#6e6a86;--line:#e8e2f6;--page:#f3efff;--green:#1fae8e;--green-dark:#168a71;--grad:linear-gradient(135deg,#8b5cf6 0%,#6d3df0 55%,#c026d3 100%);--glass:rgba(255,255,255,.78);--card-shadow:0 8px 24px rgba(88,54,181,.10)}
+body.dark-mode{--violet:#b79bff;--violet-dark:#9a78ff;--lavender:#2b2447;--ink:#f4f1ff;--muted:#b0a9c8;--line:#3a3358;--surface:#1d1a2e;--page:#0f0c1d;--glass:rgba(29,26,46,.78);--card-shadow:0 8px 24px rgba(0,0,0,.35)}
+@keyframes omDrift{0%{transform:translate3d(0,0,0)}100%{transform:translate3d(-25%,0,0)}}
+@keyframes omFade{from{opacity:0}to{opacity:1}}
+body{background:transparent!important}
+body::before{content:'';position:fixed;top:0;bottom:0;left:0;width:200%;z-index:-1;pointer-events:none;background:linear-gradient(115deg,#f3efff 0%,#e4f1ff 22%,#ffeaf4 46%,#ece8ff 70%,#e2f6ff 100%);animation:omDrift 28s ease-in-out infinite alternate;will-change:transform}
+body.dark-mode::before{background:linear-gradient(115deg,#0f0c1d 0%,#1a1138 25%,#0c1832 50%,#1d0f33 75%,#0f0c1d 100%)}
+.app-shell{background:transparent}
+.app-header,.bottom-nav,.chat-view .chat-header{background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-color:rgba(124,77,255,.14)}
+.header-title,.wordmark{background:linear-gradient(90deg,#7c4dff,#ec4899);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.brand-mark,.header-logo{background:var(--grad)}
+.primary-button{background:var(--grad);box-shadow:0 8px 20px rgba(124,77,255,.32);transition:transform .15s,box-shadow .2s,filter .2s}
+.primary-button:hover{background:var(--grad);filter:brightness(1.07)}
+.primary-button:active{transform:scale(.98)}
+.create-button{background:linear-gradient(135deg,#22c3a0,#13a085);box-shadow:0 8px 20px rgba(19,160,133,.28)}
+.create-button:hover{background:linear-gradient(135deg,#22c3a0,#13a085);filter:brightness(1.07)}
+.icon-btn:hover{background:#e3d8ff}
+.nav-item{transition:color .2s}
+.nav-item.active{color:var(--violet);font-weight:750}
+.nav-item.active::before{content:'';position:absolute;top:6px;width:54px;height:30px;border-radius:15px;background:rgba(124,77,255,.16);z-index:-1}
+.login-card,.composer-bar,.om-post,.profile-section,.om2-card{border-radius:18px;box-shadow:var(--card-shadow);border:1px solid rgba(124,77,255,.08)}
+input:focus,textarea:focus{border-color:#a78bfa;box-shadow:0 0 0 3px rgba(124,77,255,.22)}
+dialog,.om-panel{border-radius:20px}
+.chat-view .chat-messages{background-image:linear-gradient(165deg,#f7f2ff,#eaf4ff 60%,#fff0f8)}
+body.dark-mode .chat-view .chat-messages{background-image:linear-gradient(165deg,#171326,#10172e)}
+.om-bubble{border-radius:18px;box-shadow:0 2px 8px rgba(60,40,130,.10)}
+.om-bubble.mine:not(:has(.om-sticker)){background:var(--grad);color:#fff}
+.om-bubble:not(.mine):not(:has(.om-sticker)){background:#fff;color:#241f31}
+body.dark-mode .om-bubble:not(.mine):not(:has(.om-sticker)){background:#2a2540;color:#f2efff}
+.chat-mic-send{background-image:linear-gradient(135deg,#25d366,#13a85a)}
+.view:not([hidden]):not([data-view='messages']):not([data-view='chat']){animation:omFade .3s ease}
+@media (prefers-reduced-motion:reduce){body::before,.view[data-view='messages'],.chat-view.om3-anim #chatMessages{animation:none!important}}
