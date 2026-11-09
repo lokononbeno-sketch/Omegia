@@ -416,6 +416,37 @@ async function audioNote(){
  try{omVoiceCleanup();omVoiceCloseCtx();omVoiceStream=await navigator.mediaDevices.getUserMedia({audio:true});omVoiceChunks=[];omVoiceElapsed=0;const mime=['audio/webm;codecs=opus','audio/webm','audio/mp4'].find(x=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(x));const r=new MediaRecorder(omVoiceStream,mime?{mimeType:mime}:undefined);omVoiceRecorder=r;r.ondataavailable=e=>{if(e.data&&e.data.size)omVoiceChunks.push(e.data);};r.onstop=()=>omVoicePreview(r);r.start(200);omVoiceStarted=Date.now();const panel=omVoicePanel();panel.innerHTML=`<button type='button' data-vcancel aria-label='Annuler'>×</button><span data-vtime>00:00</span><canvas width='220' height='34' aria-label='Onde sonore'></canvas><button type='button' data-vpause aria-label='Pause'>Ⅱ</button><button type='button' data-vfinish aria-label='Terminer'>✓</button>`;panel.querySelector('[data-vcancel]').onclick=()=>{const c=omVoiceRecorder;if(c){c.onstop=null;if(c.state!=='inactive'){try{c.stop();}catch{}}}omVoiceCloseCtx();omVoiceCleanup();chatSignal('recording',false);};panel.querySelector('[data-vpause]').onclick=omVoiceTogglePause;panel.querySelector('[data-vfinish]').onclick=omVoiceFinish;try{const ac=new(window.AudioContext||window.webkitAudioContext)();omVoiceCtx=ac;if(ac.state==='suspended')ac.resume().catch(()=>{});omVoiceAnalyser=ac.createAnalyser();omVoiceAnalyser.fftSize=256;ac.createMediaStreamSource(omVoiceStream).connect(omVoiceAnalyser);omVoiceDraw(panel.querySelector('canvas'));}catch{}omVoiceTimer=setInterval(omVoiceTick,200);chatSignal('recording',true);}catch(e){omVoiceCleanup();toast('Autorise le microphone pour enregistrer.');}
 }
 
+/* ===== Notes vocales v3 : bouton vert ➤ visible pendant l'enregistrement, envoi direct (comme WhatsApp) ===== */
+let omVoiceSendNow=false;
+async function omVoiceSendBlob(blob,type){const f=new File([blob],'note-vocale.'+(type.includes('mp4')?'m4a':'webm'),{type});await send('',await upload(f,'messages'),'audio');}
+function omVoiceFinish(sendNow){omVoiceSendNow=sendNow===true;const r=omVoiceRecorder;if(!r||r.state==='inactive')return;try{if(r.state==='recording')omVoiceElapsed+=Date.now()-omVoiceStarted;clearInterval(omVoiceTimer);omVoiceTimer=null;r.stop();chatSignal('recording',false);}catch(e){toast('Impossible de terminer : '+(e.message||'erreur'));}}
+function omVoicePreview(r){
+ if(omVoiceStream)omVoiceStream.getTracks().forEach(t=>t.stop());
+ omVoiceStream=null;omVoiceAnalyser=null;omVoiceCloseCtx();
+ if(omVoiceFrame)cancelAnimationFrame(omVoiceFrame);omVoiceFrame=0;
+ clearInterval(omVoiceTimer);omVoiceTimer=null;
+ const p=document.querySelector('.om-voice-bar');if(!p)return;
+ const sendNow=omVoiceSendNow;omVoiceSendNow=false;
+ if(!omVoiceChunks.length){omVoiceCleanup();toast('Enregistrement vide, réessaie.');return;}
+ const type=(r.mimeType||'audio/webm').split(';')[0]||'audio/webm';
+ const blob=new Blob(omVoiceChunks,{type});omVoiceBlob=blob;
+ if(omVoiceUrl)URL.revokeObjectURL(omVoiceUrl);
+ omVoiceUrl=URL.createObjectURL(blob);
+ const showPreview=()=>{
+  p.innerHTML=`<button type='button' data-vdelete aria-label='Supprimer'>🗑</button><audio controls src='${omVoiceUrl}'></audio><span class='om-voice-time'>${omVoiceClock(omVoiceElapsed)}</span><button type='button' data-vsend aria-label='Envoyer'>➤</button>`;
+  p.querySelector('[data-vdelete]').onclick=()=>omVoiceCleanup();
+  p.querySelector('[data-vsend]').onclick=async e=>{const b=e.currentTarget;if(b.disabled)return;b.disabled=true;b.textContent='…';try{await omVoiceSendBlob(blob,type);omVoiceCleanup();}catch(err){b.disabled=false;b.textContent='➤';toast(err.message||'Envoi vocal impossible.');}};
+ };
+ if(!sendNow){showPreview();return;}
+ p.innerHTML="<span class='om-voice-time' style='flex:1;text-align:center'>Envoi en cours…</span>";
+ omVoiceSendBlob(blob,type).then(()=>omVoiceCleanup()).catch(err=>{toast(err.message||'Envoi vocal impossible.');if(document.querySelector('.om-voice-bar'))showPreview();});
+}
+async function audioNote(){
+ if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)return toast('Microphone non pris en charge.');
+ if(omVoiceRecorder&&omVoiceRecorder.state!=='inactive'){omVoiceTogglePause();return;}
+ try{omVoiceCleanup();omVoiceCloseCtx();omVoiceStream=await navigator.mediaDevices.getUserMedia({audio:true});omVoiceChunks=[];omVoiceElapsed=0;omVoiceSendNow=false;const mime=['audio/webm;codecs=opus','audio/webm','audio/mp4'].find(x=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(x));const r=new MediaRecorder(omVoiceStream,mime?{mimeType:mime}:undefined);omVoiceRecorder=r;r.ondataavailable=e=>{if(e.data&&e.data.size)omVoiceChunks.push(e.data);};r.onstop=()=>omVoicePreview(r);r.start(200);omVoiceStarted=Date.now();const panel=omVoicePanel();panel.innerHTML=`<button type='button' data-vcancel aria-label='Annuler'>×</button><span data-vtime>00:00</span><canvas width='220' height='34' aria-label='Onde sonore'></canvas><button type='button' data-vpause aria-label='Pause'>Ⅱ</button><button type='button' data-vsend aria-label='Envoyer'>➤</button>`;panel.querySelector('[data-vcancel]').onclick=()=>{const c=omVoiceRecorder;if(c){c.onstop=null;if(c.state!=='inactive'){try{c.stop();}catch{}}}omVoiceCloseCtx();omVoiceCleanup();chatSignal('recording',false);};panel.querySelector('[data-vpause]').onclick=omVoiceTogglePause;panel.querySelector('[data-vsend]').onclick=()=>omVoiceFinish(true);try{const ac=new(window.AudioContext||window.webkitAudioContext)();omVoiceCtx=ac;if(ac.state==='suspended')ac.resume().catch(()=>{});omVoiceAnalyser=ac.createAnalyser();omVoiceAnalyser.fftSize=256;ac.createMediaStreamSource(omVoiceStream).connect(omVoiceAnalyser);omVoiceDraw(panel.querySelector('canvas'));}catch{}omVoiceTimer=setInterval(omVoiceTick,200);chatSignal('recording',true);}catch(e){omVoiceCleanup();toast('Autorise le microphone pour enregistrer.');}
+}
+
 window.omegiaSocial={send,openSavedPosts,openMemories,get db(){return db},get user(){return user},get activePeer(){return activePeer},get active(){return active},toast,modal,esc,name,av,pick,upload,refreshProfile,showPhoto};
 window.addEventListener("load",()=>setTimeout(boot,300));
 })();
