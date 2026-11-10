@@ -991,3 +991,22 @@ body.dark-mode .om-eye-white{fill:#f6f3ff}
 .chat-input-wrap textarea:focus{border:0;box-shadow:none}
 .chat-attach,.chat-cam{align-self:flex-end}
 .om-bubble{white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* Icônes de la barre du bas (forme Messenger) */
+.chat-attach,.chat-cam{color:var(--violet-dark)}
+.chat-attach svg,.chat-cam svg{stroke-linecap:round;stroke-linejoin:round}
+
+/* Barre vocale style Messenger : capsule en haut, supprimer / pause / envoyer en bas */
+.chat-input-bar.om-voice-active{display:block}
+.om-voice-bar{width:100%;min-height:0;display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:6px 8px 4px;background:transparent;border-radius:0}
+.om-voice-bar .om-vr-pill{display:flex;align-items:center;gap:12px;height:44px;padding:0 16px;border-radius:22px;background:var(--grad-strong);color:#fff}
+.om-voice-bar .om-vr-pill canvas{flex:1;min-width:0;height:30px;width:auto}
+.om-voice-bar .om-vr-pill [data-vtime]{font-variant-numeric:tabular-nums;font-size:14px;font-weight:650;color:#fff}
+.om-voice-bar .om-vr-actions{display:flex;align-items:center;justify-content:space-between;padding:0 4px}
+.om-voice-bar .om-vr-actions button{width:48px;height:44px;border:0;border-radius:12px;background:transparent;display:grid;place-items:center;padding:0;color:var(--muted)}
+.om-voice-bar .om-vr-actions [data-vpause]{color:var(--violet-dark)}
+.om-voice-bar .om-vr-actions [data-vsend]{color:var(--violet-dark);background:transparent}
+.om-voice-bar .om-vr-actions button:disabled{opacity:.45}
+.om-voice-bar .om-vr-status{min-height:0;font-size:13px;line-height:1.3;text-align:center;color:var(--muted);padding:0 8px 2px}
+.om-voice-bar .om-vr-status:empty{display:none}
+.om-voice-bar .om-vr-status.err{color:var(--danger,#e24b4b);font-weight:650}
