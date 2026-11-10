@@ -1018,3 +1018,21 @@ body.dark-mode .om-eye-white{fill:#f6f3ff}
 .om-auto-tag{margin-top:4px;font-size:11px;opacity:.8}
 label.om-check{display:flex;align-items:center;gap:8px}
 label.om-check input{width:auto;flex:none}
+
+
+/* Couverture typographique de « Elle m’appelait Chéco » */
+.lit-cover-checo {
+  background: radial-gradient(circle at 78% 18%, #a78bfa 0, transparent 34%), linear-gradient(145deg, #241044 0%, #5933a5 55%, #171027 100%) !important;
+  color: #fff !important;
+  font-family: Georgia, serif;
+  font-size: clamp(17px, 4vw, 25px) !important;
+  font-weight: 800;
+  letter-spacing: .045em;
+  line-height: 1.25;
+  text-align: center;
+  padding: 22px;
+  text-shadow: 0 2px 12px #0009;
+  box-sizing: border-box;
+}
+.lit-author { margin: 0 0 10px; color: var(--muted); font-size: 13px; font-weight: 650; }
+#litDetailSubtitle { margin: 0 0 8px; font-style: italic; color: var(--muted); }

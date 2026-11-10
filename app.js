@@ -189,19 +189,22 @@ function saveNovels(list) {
   try { localStorage.setItem(LIT_KEY, JSON.stringify(list)); } catch {}
 }
 
-// Exemple initial si vide (tu pourras le remplacer / supprimer)
+// Roman officiel ajouté par défaut dans la bibliothèque de tous les utilisateurs.
+const CHECO_NOVEL = {
+  id: "elle-m-appelait-checo",
+  title: "Elle m’appelait Chéco",
+  subtitle: "Je croyais être son ami jusqu’à ce regard",
+  author: "Benoli LOKONON",
+  price: "Voir le prix sur Chariow",
+  buyUrl: "https://qlfzgouk.mychariow.shop/prd_5wyolo5v",
+  summary: "Depuis le collège, Benoli et Lénis étaient inséparables. Entre les devoirs, les fous rires, les messages tard dans la nuit et les longues journées de cours, leur amitié semblait simple… presque évidente. Lénis avait une habitude étrange : elle l’appelait toujours « Chéco », un surnom que personne ne comprenait vraiment, même pas Benoli lui-même. Mais tout change lorsqu’ils arrivent à l’université. Dans ce nouvel environnement rempli de rencontres, de jalousies, de secrets et de rivalités, leur relation commence lentement à évoluer. Les regards deviennent plus longs, les silences plus lourds et les absences plus douloureuses. Entre amour, confusion, pression universitaire, trahisons, ambitions et émotions cachées, Benoli va découvrir que certaines histoires commencent bien avant qu’on ne réalise qu’on est amoureux. Et peut-être que depuis le début… Lénis ne l’avait jamais appelé « Chéco » par hasard.",
+  excerpt: "",
+  createdAt: 0
+};
 function ensureSampleNovels() {
-  let list = loadNovels();
-  if (list.length === 0) {
-    list = [{
-      id: "sample-1",
-      title: "Exemple — Mon premier roman",
-      price: "2 500 FCFA",
-      buyUrl: "https://example.com",
-      summary: "Remplace cet exemple par tes vrais romans.\nUn résumé accrocheur de l’histoire.",
-      excerpt: "Chapitre 1 (extrait gratuit)…\n\nIl était une fois…",
-      createdAt: Date.now()
-    }];
+  let list = loadNovels().filter((n) => n.id !== "sample-1");
+  if (!list.some((n) => n.id === CHECO_NOVEL.id)) {
+    list.unshift({ ...CHECO_NOVEL });
     saveNovels(list);
   }
   return list;
@@ -228,6 +231,11 @@ function renderLiteraryGrid() {
         <div class="lit-card-title"></div>
         <div class="lit-card-price"></div>
       </div>`;
+    const cover = btn.querySelector(".lit-card-cover");
+    if (n.id === CHECO_NOVEL.id) {
+      cover.textContent = "ELLE M’APPELAIT CHÉCO";
+      cover.classList.add("lit-cover-checo");
+    }
     btn.querySelector(".lit-card-title").textContent = n.title;
     btn.querySelector(".lit-card-price").textContent = n.price;
     btn.addEventListener("click", () => openNovelDetail(n.id));
@@ -240,12 +248,20 @@ function openNovelDetail(id) {
   if (!n) return;
   if ($("litDetailName")) $("litDetailName").textContent = n.title;
   if ($("litDetailTitle")) $("litDetailTitle").textContent = n.title;
+  if ($("litDetailAuthor")) $("litDetailAuthor").textContent = n.author ? "Par " + n.author : "";
+  if ($("litDetailSubtitle")) $("litDetailSubtitle").textContent = n.subtitle || "";
   if ($("litDetailPrice")) $("litDetailPrice").textContent = n.price;
+  const detailCover = $("litDetailCover");
+  if (detailCover) {
+    detailCover.textContent = n.id === CHECO_NOVEL.id ? "ELLE M’APPELLAIT CHÉCO" : "📖";
+    detailCover.classList.toggle("lit-cover-checo", n.id === CHECO_NOVEL.id);
+  }
   if ($("litDetailSummary")) $("litDetailSummary").textContent = n.summary || "—";
   if ($("litDetailExcerpt")) $("litDetailExcerpt").textContent = n.excerpt || "Aucun extrait gratuit pour le moment.";
   const buy = $("litBuyBtn");
   if (buy) {
     buy.href = n.buyUrl || "#";
+    buy.textContent = n.id === CHECO_NOVEL.id ? "Acheter le roman sur Chariow" : "Acheter / Payer";
     buy.onclick = (e) => {
       if (!n.buyUrl || n.buyUrl === "https://example.com") {
         e.preventDefault();
