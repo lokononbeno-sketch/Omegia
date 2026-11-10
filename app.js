@@ -195,7 +195,7 @@ const CHECO_NOVEL = {
   title: "Elle m’appelait Chéco",
   subtitle: "Je croyais être son ami jusqu’à ce regard",
   author: "Benoli LOKONON",
-  price: "Voir le prix sur Chariow",
+  price: "1 000 FCFA",
   buyUrl: "https://qlfzgouk.mychariow.shop/prd_5wyolo5v",
   summary: "Depuis le collège, Benoli et Lénis étaient inséparables. Entre les devoirs, les fous rires, les messages tard dans la nuit et les longues journées de cours, leur amitié semblait simple… presque évidente. Lénis avait une habitude étrange : elle l’appelait toujours « Chéco », un surnom que personne ne comprenait vraiment, même pas Benoli lui-même. Mais tout change lorsqu’ils arrivent à l’université. Dans ce nouvel environnement rempli de rencontres, de jalousies, de secrets et de rivalités, leur relation commence lentement à évoluer. Les regards deviennent plus longs, les silences plus lourds et les absences plus douloureuses. Entre amour, confusion, pression universitaire, trahisons, ambitions et émotions cachées, Benoli va découvrir que certaines histoires commencent bien avant qu’on ne réalise qu’on est amoureux. Et peut-être que depuis le début… Lénis ne l’avait jamais appelé « Chéco » par hasard.",
   excerpt: "",
