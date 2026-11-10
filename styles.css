@@ -983,3 +983,11 @@ body.dark-mode .om-eye-white{fill:#f6f3ff}
 @keyframes splDraw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
 @keyframes splUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @media (prefers-reduced-motion:reduce){#omSplash{display:none}}
+
+/* Zone de message : retour à la ligne automatique, la zone s'agrandit (jusqu'à 5 lignes) */
+.chat-input-bar{align-items:flex-end}
+.chat-input-wrap{align-items:flex-end;border-radius:22px;min-height:44px}
+.chat-input-wrap textarea{box-sizing:border-box;flex:1;min-width:0;border:0;margin:0;padding:8px 0;height:38px;min-height:38px;max-height:124px;font:inherit;font-size:16px;line-height:1.35;color:inherit;background:transparent;box-shadow:none;outline:0;resize:none;overflow-y:hidden;white-space:pre-wrap;overflow-wrap:anywhere}
+.chat-input-wrap textarea:focus{border:0;box-shadow:none}
+.chat-attach,.chat-cam{align-self:flex-end}
+.om-bubble{white-space:pre-wrap;overflow-wrap:anywhere}
