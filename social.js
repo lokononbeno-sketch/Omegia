@@ -357,9 +357,9 @@ document.querySelectorAll("[data-nav='profile'],[data-goto='profile']").forEach(
 capture("chatBack",()=>{active=null;if(channel)db.removeChannel(channel);document.querySelectorAll(".view").forEach(v=>v.hidden=v.dataset.view!=="messages");document.querySelector(".bottom-nav")?.classList.remove("hidden-for-chat");document.querySelector(".app-header")?.classList.remove("hidden-for-chat");});
 capture("chatAttach",async()=>{const f=await pick("image/*,video/*,audio/*,.pdf");if(!f)return;const t=f.type.startsWith("image/")?"image":f.type.startsWith("video/")?"video":f.type.startsWith("audio/")?"audio":"file";try{await send("",await upload(f,"messages"),t);}catch(e){toast(e.message);}});
 capture("chatCam",async()=>{const f=await pick("image/*,video/*");if(f)try{await send("",await upload(f,"messages"),f.type.startsWith("video/")?"video":"image");}catch(e){toast(e.message);}});
-$("chatInput")?.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.value.trim()){e.preventDefault();e.stopImmediatePropagation();send(e.target.value.trim());}},true);
+$("chatInput")?.addEventListener("keydown",e=>{if(e.key==="Enter"){if(!e.shiftKey&&!e.isComposing&&window.matchMedia&&matchMedia("(pointer:fine)").matches&&e.target.value.trim()){e.preventDefault();e.stopImmediatePropagation();send(e.target.value.trim());}else{e.stopImmediatePropagation();}}},true);
 $("chatInput")?.addEventListener("input",()=>{chatSignal("typing",!!$("chatInput").value.trim());},true);
-$("chatMicSend")?.addEventListener("click",e=>{e.stopImmediatePropagation();$("chatInput")?.value.trim()?send($("chatInput").value.trim()):audioNote();},true);
+$("chatMicSend")?.addEventListener("click",e=>{e.stopImmediatePropagation();$("chatInput")?.value.trim()?send($("chatInput").value.trim()):omVoiceComposerBtn();},true);
 document.querySelectorAll("[data-nav='messages'],[data-goto='messages']").forEach(b=>b.addEventListener("click",()=>setTimeout(loadChats,150)));
 document.querySelectorAll("[data-nav='friends'],[data-goto='friends']").forEach(b=>b.addEventListener("click",()=>setTimeout(loadFriends,150)));
 document.querySelectorAll("[data-nav='home']").forEach(b=>b.addEventListener("click",()=>setTimeout(loadFeed,150)));
@@ -393,6 +393,9 @@ async function audioNote(){
   omVoiceTimer=setInterval(()=>{const t=panel.querySelector("[data-vtime]");if(t)t.textContent=omVoiceClock(omVoiceElapsed+Date.now()-omVoiceStarted);},200);chatSignal("recording",true);
  }catch(e){omVoiceCleanup();toast("Autorise le microphone pour enregistrer.");}
 }
+/* Zone de message multiligne : retour à la ligne automatique, la zone grandit jusqu'à 5 lignes. Entrée = nouvelle ligne sur téléphone, envoi sur ordinateur (Maj+Entrée = nouvelle ligne). */
+function omComposerFit(){const t=$('chatInput');if(!t||t.tagName!=='TEXTAREA')return;t.style.height='auto';const h=Math.min(t.scrollHeight,124);t.style.height=h+'px';t.style.overflowY=t.scrollHeight>124?'auto':'hidden';if(t.scrollHeight>124)t.scrollTop=t.scrollHeight;}
+function omComposerInit(){const t=$('chatInput');if(!t||t.tagName!=='TEXTAREA'||t.dataset.omFit)return;t.dataset.omFit='1';const d=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value');Object.defineProperty(t,'value',{configurable:true,get(){return d.get.call(this);},set(v){d.set.call(this,v);omComposerFit();omUpdateComposer();}});t.addEventListener('input',omComposerFit);omComposerFit();}
 function omUpdateComposer(){const input=$("chatInput"),btn=$("chatMicSend");if(!input||!btn)return;const sending=!!input.value.trim();btn.classList.toggle("sending",sending);btn.setAttribute("aria-label",sending?"Envoyer le message":"Note vocale");}
 function omFixChatLayout(){
  const view=document.querySelector(".chat-view");if(view){view.style.position="fixed";view.style.inset="0";view.style.width="100%";view.style.height="100dvh";view.style.maxHeight="100dvh";view.style.overflow="hidden";}
@@ -400,7 +403,7 @@ function omFixChatLayout(){
  const panel=$("emojiPanel");if(panel){panel.style.bottom="calc(66px + env(safe-area-inset-bottom))";panel.style.maxHeight="min(45dvh, 360px)";}
 }
 function omAddStickerBack(){const panel=$("emojiPanel");if(!panel||panel.querySelector(".om-sticker-back"))return;const back=document.createElement("button");back.type="button";back.className="om-sticker-back";back.textContent="← Retour";back.onclick=()=>{panel.hidden=true;};panel.insertBefore(back,panel.firstChild);}
-document.addEventListener("DOMContentLoaded",()=>{omFixChatLayout();omAddStickerBack();omUpdateComposer();$("chatInput")?.addEventListener("input",omUpdateComposer);window.addEventListener("resize",()=>{omFixChatLayout();});document.querySelectorAll("[data-sticker-tab]").forEach(t=>t.addEventListener("click",omAddStickerBack));});
+document.addEventListener("DOMContentLoaded",()=>{omFixChatLayout();omAddStickerBack();omComposerInit();omUpdateComposer();$("chatInput")?.addEventListener("input",omUpdateComposer);window.addEventListener("resize",()=>{omFixChatLayout();});document.querySelectorAll("[data-sticker-tab]").forEach(t=>t.addEventListener("click",omAddStickerBack));});
 
 /* ===== Notes vocales v2 : pause, reprise, terminer, préécoute, envoi (remplace la version précédente) ===== */
 let omVoiceCtx=null;
@@ -418,6 +421,14 @@ async function audioNote(){
 
 /* ===== Notes vocales v3 : bouton vert ➤ visible pendant l'enregistrement, envoi direct (comme WhatsApp) ===== */
 let omVoiceSendNow=false;
+/* Bouton principal (micro/➤) : micro = démarre ; ➤ pendant l'enregistrement ou l'aperçu = ENVOIE. La pause reste sur le bouton Ⅱ de la barre. */
+function omVoiceComposerBtn(){
+ const r=omVoiceRecorder;
+ if(r&&r.state!=='inactive'){omVoiceFinish(true);return;}
+ const pending=document.querySelector('.om-voice-bar [data-vsend]');
+ if(pending){pending.click();return;}
+ audioNote();
+}
 async function omVoiceSendBlob(blob,type){
  if(!active)throw new Error('Ouvre une conversation avant d\u2019envoyer.');
  const f=new File([blob],'note-vocale.'+(type.includes('mp4')?'m4a':'webm'),{type});
