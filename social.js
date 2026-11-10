@@ -359,7 +359,7 @@ capture("chatAttach",async()=>{const f=await pick("image/*,video/*,audio/*,.pdf"
 capture("chatCam",async()=>{const f=await pick("image/*,video/*");if(f)try{await send("",await upload(f,"messages"),f.type.startsWith("video/")?"video":"image");}catch(e){toast(e.message);}});
 $("chatInput")?.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.value.trim()){e.preventDefault();e.stopImmediatePropagation();send(e.target.value.trim());}},true);
 $("chatInput")?.addEventListener("input",()=>{chatSignal("typing",!!$("chatInput").value.trim());},true);
-$("chatMicSend")?.addEventListener("click",e=>{e.stopImmediatePropagation();$("chatInput")?.value.trim()?send($("chatInput").value.trim()):audioNote();},true);
+$("chatMicSend")?.addEventListener("click",e=>{e.stopImmediatePropagation();$("chatInput")?.value.trim()?send($("chatInput").value.trim()):omVoiceComposerBtn();},true);
 document.querySelectorAll("[data-nav='messages'],[data-goto='messages']").forEach(b=>b.addEventListener("click",()=>setTimeout(loadChats,150)));
 document.querySelectorAll("[data-nav='friends'],[data-goto='friends']").forEach(b=>b.addEventListener("click",()=>setTimeout(loadFriends,150)));
 document.querySelectorAll("[data-nav='home']").forEach(b=>b.addEventListener("click",()=>setTimeout(loadFeed,150)));
@@ -418,6 +418,14 @@ async function audioNote(){
 
 /* ===== Notes vocales v3 : bouton vert ➤ visible pendant l'enregistrement, envoi direct (comme WhatsApp) ===== */
 let omVoiceSendNow=false;
+/* Bouton principal (micro/➤) : micro = démarre ; ➤ pendant l'enregistrement ou l'aperçu = ENVOIE. La pause reste sur le bouton Ⅱ de la barre. */
+function omVoiceComposerBtn(){
+ const r=omVoiceRecorder;
+ if(r&&r.state!=='inactive'){omVoiceFinish(true);return;}
+ const pending=document.querySelector('.om-voice-bar [data-vsend]');
+ if(pending){pending.click();return;}
+ audioNote();
+}
 async function omVoiceSendBlob(blob,type){
  if(!active)throw new Error('Ouvre une conversation avant d\u2019envoyer.');
  const f=new File([blob],'note-vocale.'+(type.includes('mp4')?'m4a':'webm'),{type});

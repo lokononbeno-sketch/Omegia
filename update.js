@@ -1,6 +1,6 @@
 (() => {
   const VERSION_URLS=["https://gitlab.com/api/v4/projects/88621748/repository/files/version.json/raw?ref=main","https://omegia.netlify.app/version.json","https://gitlab.com/lokononbeno/omegia-social/-/raw/main/version.json"];
-  const CURRENT_VERSION="1.0.18";
+  const CURRENT_VERSION="1.0.19";
   const APK_URL="https://gitlab.com/api/v4/projects/88621748/jobs/artifacts/main/raw/dist/OMEGIA.apk?job=android-apk";
   const style=document.createElement("style");
   style.textContent="#om-update-chip{position:fixed;right:14px;bottom:calc(82px + env(safe-area-inset-bottom,0px));z-index:9998;border:0;border-radius:999px;padding:11px 15px;background:#7652d6;color:#fff;font-weight:700;box-shadow:0 5px 22px #0003}#om-update-panel{position:fixed;inset:0;z-index:9999;background:#090711bb;display:grid;place-items:center;padding:20px}#om-update-card{width:min(100%,380px);background:#fff;color:#211b30;border-radius:20px;padding:22px;box-shadow:0 18px 60px #0005;font:15px system-ui}#om-update-card h3{margin:0 0 8px;font-size:20px}#om-update-card p{line-height:1.5}#om-update-card button{border:0;border-radius:12px;padding:12px 15px;font-weight:700;margin:5px 5px 0 0}#om-update-install{background:#7652d6;color:white}#om-update-later{background:#eeeaf5;color:#302743}";
