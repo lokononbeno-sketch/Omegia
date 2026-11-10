@@ -944,3 +944,42 @@ body.dark-mode .om-eye-white{fill:#f6f3ff}
 @media (prefers-reduced-motion:reduce){.om-eye-look,.om-eye{animation:none}}
 
 @media (prefers-reduced-motion:reduce){body::before,.view[data-view='messages'],.chat-view.om3-anim #chatMessages{animation:none!important}}
+
+/* ===== Ouverture OMEGIA : œil vivant, Ω tracé, anneau lumineux (léger : SVG + transform/opacity) ===== */
+#omSplash{position:fixed;inset:0;z-index:100000;overflow:hidden;background:radial-gradient(120% 90% at 50% 40%,#2b1170 0%,#140b33 55%,#0a0716 100%);animation:splOut .3s 3s forwards}
+.spl-p{position:absolute;left:var(--x);top:var(--y);width:var(--s,3px);height:var(--s,3px);border-radius:50%;background:#e9e0ff;opacity:0}
+.spl-p.v{background:#a78bfa}
+.spl-center{position:absolute;left:50%;top:50%;width:220px;height:260px;margin:-140px 0 0 -110px}
+.spl-ring{position:absolute;left:50%;top:20px;width:152px;height:152px;margin-left:-76px;opacity:0}
+.spl-eye-b{position:absolute;left:50%;top:50px;width:64px;height:96px;margin-left:-32px;opacity:0;overflow:visible}
+.spl-omega{position:absolute;left:50%;top:38px;width:120px;height:112px;margin-left:-60px;opacity:0;overflow:visible}
+.spl-omega path{stroke-dasharray:100;stroke-dashoffset:100}
+.spl-name{position:absolute;left:0;right:0;top:184px;display:flex;align-items:center;justify-content:center;gap:8px;opacity:0}
+.spl-name span{font-size:30px;font-weight:850;letter-spacing:.08em;background:linear-gradient(90deg,#d9ccff,#f5b8ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.spl-white{fill:#f6f3ff}
+.spl-outline{fill:none;stroke:#c9b8ff;stroke-width:1.8;stroke-linejoin:round}
+#omSplash .om-eye-white{fill:#f6f3ff}
+#omSplash .om-eye-outline{stroke:#c9b8ff}
+.spl-lid{transform-box:fill-box;transform-origin:center}
+.spl-look{transform-origin:12px 18px}
+#omSplash.go{animation:splOut calc(.25s*var(--t,1)) calc(1.4s*var(--t,1)) forwards}
+#omSplash.go.skip{animation:splOut .18s forwards}
+#omSplash.go .spl-p{animation:splP calc(1.5s*var(--t,1)) ease-out var(--d,0s) both}
+#omSplash.go .spl-eye-b{animation:splEyeB calc(.8s*var(--t,1)) calc(.1s*var(--t,1)) ease-in-out both}
+#omSplash.go .spl-eye-b .spl-lid{animation:splBlink calc(.8s*var(--t,1)) calc(.1s*var(--t,1)) linear both}
+#omSplash.go .spl-eye-b .spl-look{animation:splLook calc(.8s*var(--t,1)) calc(.1s*var(--t,1)) ease-in-out both}
+#omSplash.go .spl-ring{animation:splRing calc(.75s*var(--t,1)) calc(.7s*var(--t,1)) ease-in-out both}
+#omSplash.go .spl-omega{animation:splFade calc(.1s*var(--t,1)) calc(.85s*var(--t,1)) both,splGlow calc(.5s*var(--t,1)) calc(1.2s*var(--t,1)) ease-out both}
+#omSplash.go .spl-omega path{animation:splDraw calc(.5s*var(--t,1)) calc(.85s*var(--t,1)) ease-out both}
+#omSplash.go .spl-name{animation:splUp calc(.28s*var(--t,1)) calc(1.15s*var(--t,1)) ease-out both}
+@keyframes splOut{from{opacity:1;visibility:visible}to{opacity:0;visibility:hidden}}
+@keyframes splP{0%{opacity:0;transform:translateY(10px)}30%{opacity:.9}100%{opacity:.2;transform:translateY(-24px)}}
+@keyframes splEyeB{0%{opacity:0;transform:scale(.6)}14%{opacity:1;transform:scale(1)}78%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.7)}}
+@keyframes splBlink{0%,28%{transform:scaleX(1)}31%{transform:scaleX(.08)}35%,100%{transform:scaleX(1)}}
+@keyframes splLook{0%,38%{transform:translate(0,0) scale(1)}50%{transform:translate(-3.5px,0) scale(1)}62%{transform:translate(3.5px,0) scale(1)}74%,100%{transform:translate(0,0) scale(1.12)}}
+@keyframes splRing{0%{opacity:0;transform:rotate(-120deg) scale(.7)}25%{opacity:1}75%{opacity:.9;transform:rotate(200deg) scale(1)}100%{opacity:0;transform:rotate(260deg) scale(1.1)}}
+@keyframes splFade{from{opacity:0}to{opacity:1}}
+@keyframes splGlow{0%{filter:drop-shadow(0 0 3px rgba(124,77,255,.5))}50%{filter:drop-shadow(0 0 16px rgba(201,184,255,.95))}100%{filter:drop-shadow(0 0 8px rgba(124,77,255,.7))}}
+@keyframes splDraw{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+@keyframes splUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){#omSplash{display:none}}
