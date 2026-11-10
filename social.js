@@ -418,7 +418,16 @@ async function audioNote(){
 
 /* ===== Notes vocales v3 : bouton vert ➤ visible pendant l'enregistrement, envoi direct (comme WhatsApp) ===== */
 let omVoiceSendNow=false;
-async function omVoiceSendBlob(blob,type){const f=new File([blob],'note-vocale.'+(type.includes('mp4')?'m4a':'webm'),{type});await send('',await upload(f,'messages'),'audio');}
+async function omVoiceSendBlob(blob,type){
+ if(!active)throw new Error('Ouvre une conversation avant d\u2019envoyer.');
+ const f=new File([blob],'note-vocale.'+(type.includes('mp4')?'m4a':'webm'),{type});
+ let url;
+ try{url=await upload(f,'messages');}catch(e){throw new Error('Fichier vocal refus\u00e9 : '+((e&&(e.message||e.error))||'erreur inconnue'));}
+ const {error}=await db.from('messages').insert({conversation_id:active,sender_id:user.id,body:'',attachment_url:url,attachment_type:'audio'});
+ if(error)throw new Error('Message vocal refus\u00e9 : '+(error.message||'erreur inconnue'));
+ if($('chatInput'))$('chatInput').value='';
+ loadMessages();
+}
 function omVoiceFinish(sendNow){omVoiceSendNow=sendNow===true;const r=omVoiceRecorder;if(!r||r.state==='inactive')return;try{if(r.state==='recording')omVoiceElapsed+=Date.now()-omVoiceStarted;clearInterval(omVoiceTimer);omVoiceTimer=null;r.stop();chatSignal('recording',false);}catch(e){toast('Impossible de terminer : '+(e.message||'erreur'));}}
 function omVoicePreview(r){
  if(omVoiceStream)omVoiceStream.getTracks().forEach(t=>t.stop());
