@@ -207,6 +207,11 @@ function ensureSampleNovels() {
     list.unshift({ ...CHECO_NOVEL });
     saveNovels(list);
   }
+  const existingNovel = list.find((n) => n.id === CHECO_NOVEL.id);
+  if (existingNovel && existingNovel.price !== CHECO_NOVEL.price) {
+    existingNovel.price = CHECO_NOVEL.price;
+    saveNovels(list);
+  }
   return list;
 }
 
