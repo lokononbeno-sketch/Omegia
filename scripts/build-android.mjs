@@ -8,7 +8,7 @@ const webDir = path.join(root, "www");
 fs.rmSync(webDir, { recursive: true, force: true });
 fs.mkdirSync(webDir, { recursive: true });
 
-for (const file of ["index.html", "app.js", "social.js", "styles.css", "manifest.webmanifest", "sw.js", "update.js", "version.json", "features.js"]) {
+for (const file of ["index.html", "app.js", "social.js", "styles.css", "manifest.webmanifest", "sw.js", "update.js", "version.json", "features.js", "shop.js"]) {
   fs.copyFileSync(path.join(root, file), path.join(webDir, file));
 }
 if (fs.existsSync(path.join(root, "assets"))) {
