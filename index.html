@@ -386,24 +386,20 @@
         </div>
       </section>
 
-      <!-- ===== BÉNOLI LITTÉRAIRE ===== -->
-      <section class="view" id="view-literary" data-view="literary" hidden>
-        <div class="lit-header">
-          <div>
-            <h2>Bénoli littéraire</h2>
-            <p class="muted">Romans de Bénoli Lokonon</p>
-          </div>
-          <button type="button" class="lit-add-btn" id="litAddBtn" aria-label="Ajouter un roman" title="Nouveau roman">+</button>
-        </div>
-
-        <div class="lit-grid" id="litGrid">
-          <!-- Rempli par JS -->
-        </div>
-
-        <div class="empty-state" id="litEmpty" hidden>
-          <p>Aucun roman pour le moment.</p>
-          <p class="muted">Appuie sur + pour publier ton premier roman.</p>
-        </div>
+      <!-- ===== BÉNOLI LITTÉRAIRE INTÉGRÉ ===== -->
+      <section class="view" id="view-literary" data-view="literary" hidden
+        style="padding:0;max-width:none;margin:0;width:100%;height:calc(100dvh - 116px);min-height:520px;overflow:hidden;background:#080d19">
+        <iframe
+          id="benoliLiteraryFrame"
+          title="Bénoli Littéraire — espace littéraire d’OMEGIA"
+          src="https://lokononbeno-sketch.github.io/Benoli/index.html"
+          loading="lazy"
+          allow="clipboard-read; clipboard-write; fullscreen"
+          referrerpolicy="strict-origin-when-cross-origin"
+          style="display:block;width:100%;height:100%;min-height:520px;border:0;background:#080d19"
+        ></iframe>
+        <div id="litGrid" hidden></div>
+        <div id="litEmpty" hidden></div>
       </section>
 
       <!-- Détail d’un roman -->
