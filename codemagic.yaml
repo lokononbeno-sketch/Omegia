@@ -1,0 +1,23 @@
+# Codemagic : construction de l'APK OMEGIA.
+# Aucun déclencheur automatique : le build se lance à la main depuis le site Codemagic (Start new build).
+workflows:
+  omegia-android:
+    name: OMEGIA Android (APK)
+    instance_type: linux_x2
+    max_build_duration: 45
+    environment:
+      node: 22
+      java: 21
+    scripts:
+      - name: Installer les dépendances
+        script: npm install --include=dev --no-audit --no-fund
+      - name: Préparer le projet Android (Capacitor)
+        script: npm run build:android
+      - name: Construire l'APK
+        script: |
+          cd android
+          ./gradlew assembleDebug --no-daemon
+          mkdir -p ../dist
+          cp app/build/outputs/apk/debug/app-debug.apk ../dist/OMEGIA.apk
+    artifacts:
+      - dist/OMEGIA.apk
