@@ -626,6 +626,37 @@
           <p class="muted small">La publication réelle arrivera avec les tables Supabase.</p>
         </div>
       </section>
+
+      <!-- ===== AFRICAN SHOP (marketplace OMEGIA) ===== -->
+      <section class="view" id="view-shop" data-view="shop" hidden>
+        <style>
+          .nav-item[data-nav='shop'] span{font-size:9.5px;line-height:1.05;text-align:center}
+          .shop-hero{border-radius:20px;padding:22px 18px;background:var(--grad,linear-gradient(135deg,#8b5cf6,#6d3df0 55%,#c026d3));color:#fff;box-shadow:0 10px 26px rgba(88,54,181,.25)}
+          .shop-hero .shop-badge{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.2);margin-bottom:10px}
+          .shop-hero h2{margin:0 0 6px;font-size:26px}
+          .shop-hero p{margin:0;line-height:1.45;opacity:.95}
+          .shop-soon{margin:14px 0;padding:12px 14px;border-radius:14px;background:var(--lavender);color:var(--ink);font-size:14px;line-height:1.4}
+          .shop-title{font-weight:750;font-size:17px;margin:16px 2px 8px}
+          .shop-cats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+          .shop-cat{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:14px 6px;text-align:center;font-weight:650;font-size:13px}
+          .shop-cat span{display:block;font-size:28px;margin-bottom:4px}
+        </style>
+        <div class="shop-hero">
+          <div class="shop-badge">🌍 Marketplace OMEGIA</div>
+          <h2>African Shop</h2>
+          <p>Le marché africain d’OMEGIA : bientôt, découvre les boutiques et les produits des commerçants.</p>
+        </div>
+        <div class="shop-soon">🚧 Cette boutique est en construction. Les catégories ci-dessous sont l’ossature : on construit l’intérieur ensemble.</div>
+        <div class="shop-title">Catégories</div>
+        <div class="shop-cats">
+          <div class="shop-cat"><span>👗</span>Mode</div>
+          <div class="shop-cat"><span>🍲</span>Alimentation</div>
+          <div class="shop-cat"><span>💄</span>Beauté</div>
+          <div class="shop-cat"><span>📱</span>Électronique</div>
+          <div class="shop-cat"><span>🏠</span>Maison</div>
+          <div class="shop-cat"><span>🛠️</span>Services</div>
+        </div>
+      </section>
     </main>
 
     <!-- Bottom navigation -->
@@ -647,6 +678,10 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         <span>Messages</span>
         <span class="badge nav-badge" id="msgBadge" hidden>0</span>
+      </button>
+      <button type="button" class="nav-item" data-nav="shop" aria-label="African Shop">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7h12l1 13H5L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+        <span>African Shop</span>
       </button>
       <button type="button" class="nav-item" data-nav="profile" aria-label="Profil">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
