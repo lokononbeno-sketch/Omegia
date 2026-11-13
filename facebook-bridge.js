@@ -1,0 +1,51 @@
+/* OMEGIA — passerelle de migration Facebook (archive personnelle) */
+(()=>{"use strict";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const css=`.fb-bridge{position:fixed;inset:0;z-index:12000;background:#100d1dcc;display:grid;place-items:center;padding:12px}.fb-bridge-panel{width:min(100%,560px);max-height:92dvh;overflow:auto;background:var(--panel,#fff);color:var(--text,#211d2b);border-radius:20px;padding:18px;box-shadow:0 18px 60px #0005}.fb-bridge-panel h2{margin:0 0 8px}.fb-bridge-panel p{line-height:1.5}.fb-bridge-panel button,.fb-bridge-panel label.fb-action{border:0;border-radius:12px;padding:11px 14px;background:#7652d6;color:#fff;font-weight:650;display:inline-block}.fb-bridge-panel button.secondary{background:#eee9f7;color:#392b55}.fb-bridge-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.fb-bridge-note{font-size:13px;opacity:.78}.fb-bridge-stat{padding:12px;border-radius:12px;background:#7652d612;margin:8px 0}.fb-bridge-list{max-height:260px;overflow:auto}.fb-bridge-list article{padding:9px 0;border-bottom:1px solid #8883}.fb-bridge-close{float:right;background:transparent!important;color:inherit!important;font-size:22px;padding:0 8px!important}`;
+const st=document.createElement("style");st.textContent=css;document.head.appendChild(st);
+let zipPromise=null;
+function client(){const s=window.omegiaSocial;if(!s?.db||!s?.user)throw Error("Connecte-toi à ton compte OMEGIA avant d’importer une archive.");return s;}
+function modal(){const w=document.createElement("div");w.className="fb-bridge";w.innerHTML='<section class="fb-bridge-panel"><button type="button" class="fb-bridge-close" aria-label="Fermer">×</button><h2>🔄 Migration Facebook</h2><p>Importe une copie de tes propres données Facebook dans un espace privé OMEGIA. Rien ne sera publié automatiquement sur ton fil.</p><div class="fb-bridge-stat"><strong>Import d’archive personnelle</strong><p class="fb-bridge-note">Dans Facebook, ouvre Paramètres → Espace Comptes → Vos informations et autorisations → Télécharger vos informations. Choisis JSON et télécharge l’archive ZIP.</p></div><div class="fb-bridge-actions"><button type="button" id="fbPick">Choisir mon archive ZIP</button><button type="button" class="secondary" id="fbHistory">Voir mes imports</button></div><p class="fb-bridge-note" id="fbStatus" role="status">L’archive est analysée sur ton appareil. Seuls les textes de publications et les noms/liens d’amis détectés sont enregistrés. Les photos et vidéos ne sont pas téléversées automatiquement afin d’économiser tes données mobiles.</p><div id="fbResults"></div><hr><p class="fb-bridge-note"><strong>Connexion Facebook en direct :</strong> elle nécessite une application Meta, une configuration OAuth et des autorisations approuvées. Elle n’est pas activée dans cette première étape. OMEGIA ne récupère pas les données privées d’autres comptes.</p></section>';document.body.appendChild(w);w.querySelector(".fb-bridge-close").onclick=()=>w.remove();w.addEventListener("click",e=>{if(e.target===w)w.remove();});w.querySelector("#fbPick").onclick=pickArchive;w.querySelector("#fbHistory").onclick=showHistory;return w;}
+function status(msg,bad=false){const el=document.querySelector("#fbStatus");if(el){el.textContent=msg;el.style.color=bad?"#b42318":"";}}
+async function loadZip(){if(zipPromise)return zipPromise;zipPromise=new Promise((resolve,reject)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js";s.onload=()=>window.JSZip?resolve(window.JSZip):reject(Error("La bibliothèque ZIP est indisponible."));s.onerror=()=>reject(Error("Impossible de charger le lecteur ZIP. Vérifie ta connexion."));document.head.appendChild(s);});return zipPromise;}
+function walk(x,fn){if(!x||typeof x!=="object")return;if(Array.isArray(x)){x.forEach(v=>walk(v,fn));return;}fn(x);Object.values(x).forEach(v=>walk(v,fn));}
+function cleanPost(o){const parts=[];if(typeof o.title==="string"&&o.title.trim())parts.push(o.title.trim());if(Array.isArray(o.data))for(const d of o.data){if(typeof d?.post==="string")parts.push(d.post);else if(typeof d?.text==="string")parts.push(d.text);}if(typeof o.message==="string")parts.push(o.message);const body=[...new Set(parts.map(x=>x.trim()).filter(Boolean))].join("\n").slice(0,5000);return body;}
+function dateOf(ts){if(!ts)return null;const n=Number(ts);if(!Number.isFinite(n))return null;const d=new Date(n*1000);return Number.isNaN(d.getTime())?null:d.toISOString();}
+async function extract(zip){
+ const items=[],seen=new Set();let files=Object.values(zip.files).filter(f=>!f.dir),media=0,pageFiles=0,groupFiles=0;
+ for(const f of files){const path=f.name.toLowerCase();if(/(^|\/)(photos|videos|your_photos|your_videos|profile_photos|album)/.test(path)&&!path.endsWith(".json"))media++;
+ if(/pages?\//.test(path)&&path.endsWith(".json"))pageFiles++;if(/groups?\//.test(path)&&path.endsWith(".json"))groupFiles++;
+ if(!path.endsWith(".json"))continue;
+ if(/posts?\//.test(path)&&/(your_posts|posts|published)/.test(path)){
+  let data;try{data=JSON.parse(await f.async("string"));}catch{continue;}
+  walk(data,o=>{if(!("timestamp" in o))return;const body=cleanPost(o);if(!body)return;const key=String(o.timestamp)+"|"+body;if(seen.has("p"+key))return;seen.add("p"+key);items.push({kind:"post",title:"Publication Facebook",body,occurred_at:dateOf(o.timestamp),source_path:f.name,metadata:{has_attachments:Array.isArray(o.attachments)&&o.attachments.length>0}});});
+ } else if(/friends?\//.test(path)){
+  let data;try{data=JSON.parse(await f.async("string"));}catch{continue;}
+  walk(data,o=>{if(typeof o.name!=="string"||!o.name.trim())return;const uri=typeof o.uri==="string"?o.uri:null;const key=o.name.trim()+"|"+(uri||"");if(seen.has("f"+key))return;seen.add("f"+key);items.push({kind:"friend",title:o.name.trim().slice(0,160),body:"Contact présent dans l’archive Facebook. Cette personne n’est pas automatiquement inscrite sur OMEGIA.",source_url:uri,source_path:f.name,occurred_at:dateOf(o.timestamp),metadata:{}});});
+ } else if(/pages?\//.test(path)||/groups?\//.test(path)){
+  let data;try{data=JSON.parse(await f.async("string"));}catch{continue;}
+  const kind=/pages?\//.test(path)?"page":"group";
+  walk(data,o=>{const n=typeof o.name==="string"?o.name:typeof o.title==="string"?o.title:"";if(!n.trim())return;const key=kind+"|"+n.trim();if(seen.has(key))return;seen.add(key);items.push({kind,title:n.trim().slice(0,160),body:"Élément détecté dans l’archive. Vérifie les droits d’administration avant toute migration.",source_url:typeof o.uri==="string"?o.uri:null,source_path:f.name,metadata:{}});});
+ }
+ }
+ return {items,media,pageFiles,groupFiles,totalFiles:files.length};
+}
+async function pickArchive(){
+ const s=client();const input=document.createElement("input");input.type="file";input.accept=".zip,application/zip";input.click();
+ input.onchange=async()=>{const file=input.files?.[0];if(!file)return;if(file.size>150*1024*1024){status("Archive trop volumineuse (maximum 150 Mo). Choisis une archive plus petite.",true);return;}
+ status("Lecture de l’archive… Ne ferme pas cette fenêtre.");try{
+  const JSZip=await loadZip(),zip=await JSZip.loadAsync(file),out=await extract(zip);
+  if(!out.items.length){status("Aucune publication, liste d’amis, page ou groupe compatible n’a été détecté. Vérifie que l’export Facebook est au format JSON.",true);return;}
+  const {data:imp,error}=await s.db.from("facebook_imports").insert({user_id:s.user.id,source:"facebook_archive",file_name:file.name.slice(0,180),total_posts:out.items.filter(x=>x.kind==="post").length,total_friends:out.items.filter(x=>x.kind==="friend").length,total_pages:out.items.filter(x=>x.kind==="page").length,total_groups:out.items.filter(x=>x.kind==="group").length,total_media:out.media,status:"completed"}).select().single();
+  if(error)throw error;
+  const rows=out.items.map(x=>({...x,import_id:imp.id,user_id:s.user.id}));
+  for(let i=0;i<rows.length;i+=100){const {error:e}=await s.db.from("facebook_import_items").insert(rows.slice(i,i+100));if(e)throw e;}
+  status("Import terminé. "+rows.length+" éléments privés enregistrés. "+out.media+" fichiers photo/vidéo repérés mais non téléversés.");
+  renderSummary(imp,out.items);
+ }catch(e){status("Import interrompu : "+(e.message||"erreur inconnue")+". Vérifie que le script SQL facebook_bridge.sql a été exécuté dans Supabase.",true);}}
+}
+function renderSummary(imp,items){const box=document.querySelector("#fbResults");if(!box)return;const counts={};items.forEach(x=>counts[x.kind]=(counts[x.kind]||0)+1);box.innerHTML='<div class="fb-bridge-stat"><strong>Import enregistré</strong><p>Publications : '+(counts.post||0)+' · Amis : '+(counts.friend||0)+' · Pages : '+(counts.page||0)+' · Groupes : '+(counts.group||0)+'</p><p class="fb-bridge-note">Les amis importés sont des références privées, pas des comptes OMEGIA. Pour les retrouver sur OMEGIA, ils devront créer leur compte ou être invités.</p></div><div class="fb-bridge-list">'+items.slice(0,12).map(x=>'<article><strong>'+esc(x.title||x.kind)+'</strong><div class="fb-bridge-note">'+esc(x.body||"")+'</div></article>').join("")+'</div>';}
+async function showHistory(){const s=client(),box=document.querySelector("#fbResults");if(!box)return;box.textContent="Chargement…";const {data,error}=await s.db.from("facebook_imports").select("*").eq("user_id",s.user.id).order("created_at",{ascending:false}).limit(10);if(error){box.textContent="Erreur : "+error.message;return;}box.innerHTML="";if(!data?.length){box.textContent="Aucun import pour le moment.";return;}data.forEach(x=>{const el=document.createElement("div");el.className="fb-bridge-stat";el.innerHTML='<strong>'+esc(x.file_name||"Archive Facebook")+'</strong><p>Publications : '+x.total_posts+' · Amis : '+x.total_friends+' · Pages : '+x.total_pages+' · Groupes : '+x.total_groups+' · Médias repérés : '+x.total_media+'</p><span class="fb-bridge-note">'+new Date(x.created_at).toLocaleString("fr-FR")+'</span>';box.appendChild(el);});}
+$("facebookImportBtn")?.addEventListener("click",()=>{if(!window.omegiaSocial?.user){alert("Connecte-toi d’abord à OMEGIA.");return;}modal();});
+})();
