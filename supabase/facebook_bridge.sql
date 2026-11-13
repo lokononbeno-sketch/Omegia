@@ -67,3 +67,7 @@ comment on table public.facebook_imports is
   'Private metadata for a member-provided Facebook data archive. Not a live Facebook API connection.';
 comment on table public.facebook_import_items is
   'Private imported references and post text from the owner-provided Facebook archive.';
+
+-- Exposer uniquement les opérations nécessaires aux comptes connectés.
+grant select, insert, delete on public.facebook_imports to authenticated;
+grant select, insert, delete on public.facebook_import_items to authenticated;
