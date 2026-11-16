@@ -8,7 +8,7 @@ const webDir = path.join(root, "www");
 fs.rmSync(webDir, { recursive: true, force: true });
 fs.mkdirSync(webDir, { recursive: true });
 
-for (const file of ["index.html", "app.js", "social.js", "styles.css", "manifest.webmanifest", "sw.js", "update.js", "version.json", "features.js"]) {
+for (const file of ["index.html", "app.js", "social.js", "styles.css", "manifest.webmanifest", "sw.js", "update.js", "version.json", "features.js", "facebook-bridge.js"]) {
   fs.copyFileSync(path.join(root, file), path.join(webDir, file));
 }
 if (fs.existsSync(path.join(root, "assets"))) {
@@ -71,8 +71,19 @@ if (process.env.ANDROID_KEYSTORE_BASE64 && fs.existsSync(gradleFile)) {
   fs.writeFileSync(path.join(root, "android/omegia.keystore"), Buffer.from(process.env.ANDROID_KEYSTORE_BASE64, "base64"));
   let signedGradle = fs.readFileSync(gradleFile, "utf8");
   if (!signedGradle.includes("signingConfigs.omegia")) {
-    signedGradle = signedGradle.replace(/android\s*\{/, `android {\n    signingConfigs {\n        omegia {\n            storeFile file("../omegia.keystore")\n            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")\n            keyAlias System.getenv("ANDROID_KEY_ALIAS")\n            keyPassword System.getenv("ANDROID_KEYSTORE_PASSWORD")\n        }\n    }`);
-    signedGradle = signedGradle.replace(/buildTypes\s*\{/, `buildTypes {\n        debug {\n            signingConfig signingConfigs.omegia\n        }`);
+    signedGradle = signedGradle.replace(/android\s*\{/, `android {
+    signingConfigs {
+        omegia {
+            storeFile file("../omegia.keystore")
+            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+            keyAlias System.getenv("ANDROID_KEY_ALIAS")
+            keyPassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+        }
+    }`);
+    signedGradle = signedGradle.replace(/buildTypes\s*\{/, `buildTypes {
+        debug {
+            signingConfig signingConfigs.omegia
+        }`);
     fs.writeFileSync(gradleFile, signedGradle);
   }
 }

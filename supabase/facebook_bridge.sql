@@ -68,6 +68,6 @@ comment on table public.facebook_imports is
 comment on table public.facebook_import_items is
   'Private imported references and post text from the owner-provided Facebook archive.';
 
--- Exposer uniquement les opérations nécessaires aux comptes connectés.
-grant select, insert, delete on public.facebook_imports to authenticated;
-grant select, insert, delete on public.facebook_import_items to authenticated;
+-- Réduire les droits SQL au strict nécessaire ; la RLS limite chaque ligne au propriétaire.
+revoke all privileges on table public.facebook_imports, public.facebook_import_items from anon, authenticated, public;
+grant select, insert, delete on table public.facebook_imports, public.facebook_import_items to authenticated;
