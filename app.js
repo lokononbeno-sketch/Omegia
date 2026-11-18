@@ -201,17 +201,31 @@ const CHECO_NOVEL = {
   excerpt: "",
   createdAt: 0
 };
+
+// Nouveau roman officiel ajouté par défaut dans la bibliothèque de tous les utilisateurs.
+const SAMUEL_NOVEL = {
+  id: "j-ai-appris-a-t-aimer-trop-tard",
+  title: "J’ai appris à t’aimer trop tard",
+  subtitle: "Une histoire d’amour, de blessures… et d’un cœur qui n’avait plus envie de croire.",
+  author: "LOKONON B. TIZIANO",
+  price: "1 000 FCFA",
+  buyUrl: "https://qlfzgouk.mychariow.shop/prd_lzed99ld",
+  summary: "Samuel a longtemps cru que l’amour suffisait. Cinq relations plus tard, cinq déceptions et autant de blessures, il a fini par se convaincre qu’il valait mieux ne plus rien attendre de personne. À l’Université d’Abomey-Calavi, il préfère désormais ses études, ses projets et la compagnie de ses amis à toute nouvelle histoire sentimentale. Mais Juanita n’a pas l’intention de le laisser se réfugier derrière son indifférence. Joyeuse, taquine et généreuse, elle va s’approcher de lui avec une insistance que Samuel ne comprend pas encore. Ce qu’il ignore, c’est que le temps de Juanita est compté. Et lorsqu’il apprendra enfin à ouvrir son cœur, le destin lui réservera une épreuve qu’aucune promesse ne pourra réparer.",
+  excerpt: "",
+  createdAt: 0
+};
 function ensureSampleNovels() {
   let list = loadNovels().filter((n) => n.id !== "sample-1");
-  if (!list.some((n) => n.id === CHECO_NOVEL.id)) {
-    list.unshift({ ...CHECO_NOVEL });
-    saveNovels(list);
-  }
-  const existingNovel = list.find((n) => n.id === CHECO_NOVEL.id);
-  if (existingNovel && existingNovel.price !== CHECO_NOVEL.price) {
-    existingNovel.price = CHECO_NOVEL.price;
-    saveNovels(list);
-  }
+  [CHECO_NOVEL, SAMUEL_NOVEL].forEach((officialNovel) => {
+    if (!list.some((n) => n.id === officialNovel.id)) {
+      list.unshift({ ...officialNovel });
+    }
+    const existingNovel = list.find((n) => n.id === officialNovel.id);
+    if (existingNovel) {
+      Object.assign(existingNovel, officialNovel);
+    }
+  });
+  saveNovels(list);
   return list;
 }
 
@@ -240,6 +254,9 @@ function renderLiteraryGrid() {
     if (n.id === CHECO_NOVEL.id) {
       cover.textContent = "ELLE M’APPELAIT CHÉCO";
       cover.classList.add("lit-cover-checo");
+    } else if (n.id === SAMUEL_NOVEL.id) {
+      cover.textContent = "J’AI APPRIS À T’AIMER TROP TARD";
+      cover.classList.add("lit-cover-samuel");
     }
     btn.querySelector(".lit-card-title").textContent = n.title;
     btn.querySelector(".lit-card-price").textContent = n.price;
@@ -258,15 +275,16 @@ function openNovelDetail(id) {
   if ($("litDetailPrice")) $("litDetailPrice").textContent = n.price;
   const detailCover = $("litDetailCover");
   if (detailCover) {
-    detailCover.textContent = n.id === CHECO_NOVEL.id ? "ELLE M’APPELLAIT CHÉCO" : "📖";
+    detailCover.textContent = n.id === CHECO_NOVEL.id ? "ELLE M’APPELLAIT CHÉCO" : n.id === SAMUEL_NOVEL.id ? "J’AI APPRIS À T’AIMER TROP TARD" : "📖";
     detailCover.classList.toggle("lit-cover-checo", n.id === CHECO_NOVEL.id);
+    detailCover.classList.toggle("lit-cover-samuel", n.id === SAMUEL_NOVEL.id);
   }
   if ($("litDetailSummary")) $("litDetailSummary").textContent = n.summary || "—";
   if ($("litDetailExcerpt")) $("litDetailExcerpt").textContent = n.excerpt || "Aucun extrait gratuit pour le moment.";
   const buy = $("litBuyBtn");
   if (buy) {
     buy.href = n.buyUrl || "#";
-    buy.textContent = n.id === CHECO_NOVEL.id ? "Acheter le roman sur Chariow" : "Acheter / Payer";
+    buy.textContent = n.buyUrl && n.buyUrl.includes("mychariow.shop") ? "Acheter le roman sur Chariow" : "Acheter / Payer";
     buy.onclick = (e) => {
       if (!n.buyUrl || n.buyUrl === "https://example.com") {
         e.preventDefault();
