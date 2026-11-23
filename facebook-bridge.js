@@ -14,18 +14,18 @@ function cleanPost(o){const parts=[];if(typeof o.title==="string"&&o.title.trim(
 function dateOf(ts){if(!ts)return null;const n=Number(ts);if(!Number.isFinite(n))return null;const d=new Date(n*1000);return Number.isNaN(d.getTime())?null:d.toISOString();}
 async function extract(zip){
  const items=[],seen=new Set();let files=Object.values(zip.files).filter(f=>!f.dir),media=0,pageFiles=0,groupFiles=0;
- for(const f of files){const path=f.name.toLowerCase();if(/(^|\/)(photos|videos|your_photos|your_videos|profile_photos|album)/.test(path)&&!path.endsWith(".json"))media++;
- if(/pages?\//.test(path)&&path.endsWith(".json"))pageFiles++;if(/groups?\//.test(path)&&path.endsWith(".json"))groupFiles++;
+ for(const f of files){const path=f.name.toLowerCase();const friendsFile=/(^|\/)friends?\//.test(path)||/(^|\/)friends_and_followers\/friends(?:_\d+)?\.json$/.test(path);const pagesFile=/(^|\/)pages?\//.test(path)||/(^|\/)pages_and_profiles\/pages_[^/]+\.json$/.test(path);const groupsFile=/(^|\/)groups?\//.test(path);if(/(^|\/)(photos|videos|your_photos|your_videos|profile_photos|album)/.test(path)&&!path.endsWith(".json"))media++;
+ if(pagesFile&&path.endsWith(".json"))pageFiles++;if(groupsFile&&path.endsWith(".json"))groupFiles++;
  if(!path.endsWith(".json"))continue;
  if(/posts?\//.test(path)&&/(your_posts|posts|published)/.test(path)){
   let data;try{data=JSON.parse(await f.async("string"));}catch{continue;}
   walk(data,o=>{if(!("timestamp" in o))return;const body=cleanPost(o);if(!body)return;const key=String(o.timestamp)+"|"+body;if(seen.has("p"+key))return;seen.add("p"+key);items.push({kind:"post",title:"Publication Facebook",body,occurred_at:dateOf(o.timestamp),source_path:f.name,metadata:{has_attachments:Array.isArray(o.attachments)&&o.attachments.length>0}});});
- } else if(/friends?\//.test(path)){
+ } else if(friendsFile){
   let data;try{data=JSON.parse(await f.async("string"));}catch{continue;}
   walk(data,o=>{if(typeof o.name!=="string"||!o.name.trim())return;const uri=typeof o.uri==="string"?o.uri:null;const key=o.name.trim()+"|"+(uri||"");if(seen.has("f"+key))return;seen.add("f"+key);items.push({kind:"friend",title:o.name.trim().slice(0,160),body:"Contact présent dans l’archive Facebook. Cette personne n’est pas automatiquement inscrite sur OMEGIA.",source_url:uri,source_path:f.name,occurred_at:dateOf(o.timestamp),metadata:{}});});
- } else if(/pages?\//.test(path)||/groups?\//.test(path)){
+ } else if(pagesFile||groupsFile){
   let data;try{data=JSON.parse(await f.async("string"));}catch{continue;}
-  const kind=/pages?\//.test(path)?"page":"group";
+  const kind=pagesFile?"page":"group";
   walk(data,o=>{const n=typeof o.name==="string"?o.name:typeof o.title==="string"?o.title:"";if(!n.trim())return;const key=kind+"|"+n.trim();if(seen.has(key))return;seen.add(key);items.push({kind,title:n.trim().slice(0,160),body:"Élément détecté dans l’archive. Vérifie les droits d’administration avant toute migration.",source_url:typeof o.uri==="string"?o.uri:null,source_path:f.name,metadata:{}});});
  }
  }
